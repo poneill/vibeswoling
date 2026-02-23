@@ -15,3 +15,6 @@ wheels/
 # Playwright MCP logs
 .playwright-mcp/
 .coverage
+
+# Local data
+data/

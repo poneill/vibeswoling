@@ -91,6 +91,9 @@ def parse_csv(filepath: str) -> list[LiftRecord]:
     records: list[LiftRecord] = []
     filepath = os.path.expanduser(filepath)
 
+    if not os.path.isfile(filepath):
+        return records
+
     with open(filepath) as f:
         lines = f.readlines()
 

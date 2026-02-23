@@ -13,7 +13,7 @@ from warmup import generate_workout
 
 app = Flask(__name__)
 
-CSV_PATH = os.path.expanduser("~/misc/lifts.csv")
+CSV_PATH = os.environ.get("CSV_PATH", os.path.join(os.path.dirname(__file__), "data", "lifts.csv"))
 RECORDS: list[LiftRecord] = []
 
 
@@ -204,4 +204,4 @@ def api_plates():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5050)
+    app.run(host="0.0.0.0", debug=True, port=5050)
