@@ -429,50 +429,44 @@ function activateSet(idx) {
     const actions = document.getElementById(`actions-${idx}`);
     const s = workoutState.sets[idx];
 
-    const doneBtn = document.createElement("button");
-    doneBtn.className = "btn btn-success btn-small";
-    doneBtn.textContent = "Done";
-    doneBtn.addEventListener("click", () => completeSet(idx, true));
-    actions.appendChild(doneBtn);
-
     if (s.set_type === "work") {
-        const failBtn = document.createElement("button");
-        failBtn.className = "btn btn-warning btn-small";
-        failBtn.textContent = "Failed";
-        failBtn.addEventListener("click", () => promptFailedReps(idx));
-        actions.appendChild(failBtn);
+        const doneBtn = document.createElement("button");
+        doneBtn.className = "btn btn-success btn-small";
+        doneBtn.textContent = "Done";
+        doneBtn.addEventListener("click", () => recordWorkSet(idx, s.reps, false));
+        actions.appendChild(doneBtn);
+
+        const editBtn = document.createElement("button");
+        editBtn.className = "btn btn-warning btn-small";
+        editBtn.textContent = "Edit";
+        editBtn.addEventListener("click", () => promptActualReps(idx));
+        actions.appendChild(editBtn);
+    } else {
+        const doneBtn = document.createElement("button");
+        doneBtn.className = "btn btn-success btn-small";
+        doneBtn.textContent = "Done";
+        doneBtn.addEventListener("click", () => completeSet(idx));
+        actions.appendChild(doneBtn);
     }
 
     // Scroll to active set
     card.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
-function completeSet(idx, success) {
+function completeSet(idx) {
     const s = workoutState.sets[idx];
-    s.status = success ? "completed" : "failed";
+    s.status = "completed";
 
     const card = document.getElementById(`set-${idx}`);
     card.classList.remove("active");
-    card.classList.add(success ? "completed" : "failed");
-
-    // Clear actions
+    card.classList.add("completed");
     document.getElementById(`actions-${idx}`).innerHTML = "";
 
-    // Track for logging (only work sets)
-    if (s.set_type === "work" && success) {
-        workoutState.cumulativeVolume += (s.volume || 0);
-        const cumulEl = document.getElementById(`cumul-${idx}`);
-        if (cumulEl) cumulEl.textContent = workoutState.cumulativeVolume;
+    advanceAfterSet(idx);
+}
 
-        workoutState.completedSets.push({
-            lift_name: workoutState.liftName,
-            weight: s.weight,
-            reps: s.reps,
-            notes: "",
-        });
-    }
-
-    // Start rest timer if applicable
+function advanceAfterSet(idx) {
+    const s = workoutState.sets[idx];
     if (s.rest_seconds && idx < workoutState.sets.length - 1) {
         startTimer(s.rest_seconds, () => activateSet(idx + 1));
     } else {
@@ -480,90 +474,109 @@ function completeSet(idx, success) {
     }
 }
 
-function promptFailedReps(idx) {
+function promptActualReps(idx) {
     const s = workoutState.sets[idx];
     const modal = document.getElementById("failed-modal");
     const body = document.getElementById("failed-alternatives");
     body.innerHTML = `
         <p style="color: #999; margin-bottom: 12px; font-size: 0.9rem;">
-            Intended: ${s.weight} lbs × ${s.reps}
+            Planned: ${s.weight} lbs × ${s.reps}
         </p>
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
             <span style="color: #ccc;">Reps completed:</span>
-            <input type="number" class="reps-input" id="failed-reps-input"
-                   value="0" min="0" max="${s.reps}" inputmode="numeric">
-            <button class="btn btn-warning btn-small" id="failed-reps-confirm">Continue</button>
+            <input type="number" class="reps-input" id="actual-reps-input"
+                   placeholder="${s.reps}" min="0" max="99" inputmode="numeric">
+            <button class="btn btn-success btn-small" id="actual-reps-confirm">Log</button>
         </div>
     `;
     modal.classList.remove("hidden");
     setTimeout(() => {
-        const input = document.getElementById("failed-reps-input");
+        const input = document.getElementById("actual-reps-input");
         input.focus();
         input.select();
     }, 100);
 
-    document.getElementById("failed-reps-confirm").addEventListener("click", () => {
-        const actualReps = parseInt(document.getElementById("failed-reps-input").value) || 0;
-        failSet(idx, actualReps);
+    document.getElementById("actual-reps-confirm").addEventListener("click", () => {
+        const actualReps = parseInt(document.getElementById("actual-reps-input").value);
+        if (isNaN(actualReps) || actualReps <= 0) return;
+        modal.classList.add("hidden");
+        recordWorkSet(idx, actualReps, true);
     });
 }
 
-function failSet(idx, actualReps) {
+function recordWorkSet(idx, actualReps, offerAlternatives) {
     const s = workoutState.sets[idx];
-    s.status = "failed";
-    s.actualReps = actualReps;
+    s.status = "completed";
 
     const card = document.getElementById(`set-${idx}`);
     card.classList.remove("active");
-    card.classList.add("failed");
+    card.classList.add("completed");
     document.getElementById(`actions-${idx}`).innerHTML = "";
 
-    // Log the partial set
-    if (actualReps > 0) {
-        workoutState.cumulativeVolume += s.weight * actualReps;
-        const cumulEl = document.getElementById(`cumul-${idx}`);
-        if (cumulEl) cumulEl.textContent = workoutState.cumulativeVolume;
-
-        workoutState.completedSets.push({
-            lift_name: workoutState.liftName,
-            weight: s.weight,
-            reps: actualReps,
-            notes: `failed at ${actualReps}/${s.reps}`,
-        });
+    // Update displayed reps if different from planned
+    if (actualReps !== s.reps) {
+        const repsEl = card.querySelector(".set-reps");
+        if (repsEl) repsEl.textContent = `${actualReps} reps (planned ${s.reps})`;
     }
 
-    // Start rest timer
-    if (s.rest_seconds && idx < workoutState.sets.length - 1) {
-        startTimer(s.rest_seconds, () => activateSet(idx + 1));
-    } else {
-        activateSet(idx + 1);
-    }
+    // Log to completedSets
+    const notes = actualReps < s.reps ? `${actualReps}/${s.reps}` : "";
+    workoutState.cumulativeVolume += s.weight * actualReps;
+    const cumulEl = document.getElementById(`cumul-${idx}`);
+    if (cumulEl) cumulEl.textContent = workoutState.cumulativeVolume;
 
-    // Show alternatives modal for remaining work sets
+    workoutState.completedSets.push({
+        lift_name: workoutState.liftName,
+        weight: s.weight,
+        reps: actualReps,
+        notes: notes,
+    });
+
+    advanceAfterSet(idx);
+
+    if (offerAlternatives) {
+        const hasRemaining = workoutState.sets.some(
+            (set, i) => i > idx && set.set_type === "work" && set.status === "pending"
+        );
+        if (hasRemaining) {
+            fetchAlternatives(idx, s, actualReps);
+        }
+    }
+}
+
+function fetchAlternatives(completedIdx, s, actualReps) {
     fetch("/api/alternatives", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lift_name: workoutState.liftName, weight: s.weight, reps: s.reps }),
+        body: JSON.stringify({
+            lift_name: workoutState.liftName,
+            weight: s.weight,
+            reps: s.reps,
+            actual_reps: actualReps,
+        }),
     })
         .then(r => r.json())
-        .then(alts => {
-            if (alts.length === 0) return;
-            showFailedAlternatives(alts, idx, s.weight, s.reps, actualReps);
+        .then(data => {
+            if (data.alternatives.length === 0) return;
+            showAlternativesModal(data.alternatives, completedIdx, s, actualReps, data.actual_orm);
         });
 }
 
-function showFailedAlternatives(alternatives, failedIdx, intendedW, intendedR, actualR) {
+function showAlternativesModal(alternatives, completedIdx, plannedSet, actualReps, actualOrm) {
     const modal = document.getElementById("failed-modal");
     const body = document.getElementById("failed-alternatives");
     body.innerHTML = "";
 
-    // Context: what was intended vs what happened
+    const diff = actualReps - plannedSet.reps;
+    const diffLabel = diff > 0 ? `+${diff} reps — nice!` : `${diff} reps`;
+    const diffColor = diff > 0 ? "var(--bs-success, #198754)" : "var(--warning, #ffc107)";
+
     const context = document.createElement("div");
-    context.style.marginBottom = "16px";
-    context.style.fontSize = "0.9rem";
+    context.style.cssText = "margin-bottom: 16px; font-size: 0.9rem;";
     context.innerHTML = `
-        <p style="color: #666;">Intended: ${intendedW} lbs × ${intendedR}</p>
-        <p style="color: var(--warning);">Actual: ${intendedW} lbs × ${actualR}</p>
+        <p style="color: #666; margin: 0 0 4px;">Planned: ${plannedSet.weight} lbs × ${plannedSet.reps} · 1RM: ${plannedSet.orm.toFixed(1)}</p>
+        <p style="color: #ccc; margin: 0 0 4px;">Actual: ${plannedSet.weight} lbs × ${actualReps} · 1RM: ${actualOrm.toFixed(1)}</p>
+        <p style="color: ${diffColor}; margin: 0; font-weight: 600;">${diffLabel}</p>
     `;
     body.appendChild(context);
 
@@ -571,42 +584,44 @@ function showFailedAlternatives(alternatives, failedIdx, intendedW, intendedR, a
     label.style.color = "#666";
     label.style.margin = "0 0 8px";
     label.style.fontSize = "0.8rem";
-    label.textContent = "ALTERNATIVES FOR REMAINING SETS";
+    label.textContent = "ADJUST REMAINING SETS?";
     body.appendChild(label);
 
     alternatives.forEach(alt => {
         const btn = document.createElement("button");
         btn.className = "suggestion-option";
-        const totalVol = alt.weight * alt.reps;
         btn.innerHTML = `
             <div class="so-main">${alt.weight} lbs × ${alt.reps}</div>
             <div class="so-detail">Est. 1RM: ${alt.orm.toFixed(1)} lbs</div>
         `;
         btn.addEventListener("click", () => {
-            // Update remaining work sets
-            for (let i = failedIdx + 1; i < workoutState.sets.length; i++) {
-                if (workoutState.sets[i].set_type === "work" && workoutState.sets[i].status === "pending") {
-                    workoutState.sets[i].weight = alt.weight;
-                    workoutState.sets[i].reps = alt.reps;
-                    workoutState.sets[i].orm = alt.orm;
-                    workoutState.sets[i].volume = alt.weight * alt.reps;
-                    workoutState.sets[i].plates = alt.plates;
-                }
-            }
-            renderWorkoutSets();
-            // Re-mark completed/failed sets
-            for (let i = 0; i <= failedIdx; i++) {
-                const st = workoutState.sets[i];
-                const card = document.getElementById(`set-${i}`);
-                if (st.status === "completed") card.classList.add("completed");
-                if (st.status === "failed") card.classList.add("failed");
-            }
+            updateRemainingWorkSets(completedIdx, alt);
             modal.classList.add("hidden");
         });
         body.appendChild(btn);
     });
 
     modal.classList.remove("hidden");
+}
+
+function updateRemainingWorkSets(afterIdx, alt) {
+    for (let i = afterIdx + 1; i < workoutState.sets.length; i++) {
+        const set = workoutState.sets[i];
+        if (set.set_type === "work" && set.status === "pending") {
+            set.weight = alt.weight;
+            set.reps = alt.reps;
+            set.orm = alt.orm;
+            set.volume = alt.weight * alt.reps;
+            set.plates = alt.plates;
+        }
+    }
+    renderWorkoutSets();
+    // Re-mark completed sets
+    for (let i = 0; i <= afterIdx; i++) {
+        const st = workoutState.sets[i];
+        const card = document.getElementById(`set-${i}`);
+        if (st.status === "completed") card.classList.add("completed");
+    }
 }
 
 function closeFailedModal() {

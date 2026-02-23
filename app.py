@@ -27,6 +27,7 @@ load_records()
 
 # --- Page routes ---
 
+
 @app.route("/")
 def index():
     """Landing page: lift selector with recent activity."""
@@ -35,19 +36,23 @@ def index():
         recs = [r for r in RECORDS if r.lift_name == lift]
         if recs:
             last = recs[-1]
-            lift_summaries.append({
-                "name": lift,
-                "last_date": last.date.strftime("%b %d, %Y"),
-                "last_weight": last.weight,
-                "last_reps": last.reps,
-            })
+            lift_summaries.append(
+                {
+                    "name": lift,
+                    "last_date": last.date.strftime("%b %d, %Y"),
+                    "last_weight": last.weight,
+                    "last_reps": last.reps,
+                }
+            )
         else:
-            lift_summaries.append({
-                "name": lift,
-                "last_date": None,
-                "last_weight": None,
-                "last_reps": None,
-            })
+            lift_summaries.append(
+                {
+                    "name": lift,
+                    "last_date": None,
+                    "last_weight": None,
+                    "last_reps": None,
+                }
+            )
     return render_template("index.html", lifts=lift_summaries)
 
 
@@ -55,19 +60,28 @@ def index():
 def history_page(lift_name: str):
     bar_weight = BAR_WEIGHTS.get(lift_name, 45)
     is_pullups = lift_name == "pullups"
-    return render_template("history.html", lift_name=lift_name,
-                           bar_weight=bar_weight, is_pullups=is_pullups)
+    return render_template(
+        "history.html",
+        lift_name=lift_name,
+        bar_weight=bar_weight,
+        is_pullups=is_pullups,
+    )
 
 
 @app.route("/workout/<lift_name>")
 def workout_page(lift_name: str):
     bar_weight = BAR_WEIGHTS.get(lift_name, 45)
     is_pullups = lift_name == "pullups"
-    return render_template("workout.html", lift_name=lift_name,
-                           bar_weight=bar_weight, is_pullups=is_pullups)
+    return render_template(
+        "workout.html",
+        lift_name=lift_name,
+        bar_weight=bar_weight,
+        is_pullups=is_pullups,
+    )
 
 
 # --- API routes ---
+
 
 @app.route("/api/history/<lift_name>")
 def api_history(lift_name: str):
@@ -78,15 +92,17 @@ def api_history(lift_name: str):
     for r in recs:
         orm = effective_1rm(r.weight, r.reps) if r.weight and r.reps else None
         vol = volume(r.weight, r.reps) if r.weight and r.reps else None
-        result.append({
-            "date": r.date.isoformat(),
-            "weight": r.weight,
-            "reps": r.reps,
-            "notes": r.notes,
-            "orm": orm,
-            "volume": vol,
-            "plates": plates_for_weight(r.weight, bar_weight) if r.weight else None,
-        })
+        result.append(
+            {
+                "date": r.date.isoformat(),
+                "weight": r.weight,
+                "reps": r.reps,
+                "notes": r.notes,
+                "orm": orm,
+                "volume": vol,
+                "plates": plates_for_weight(r.weight, bar_weight) if r.weight else None,
+            }
+        )
     return jsonify(result)
 
 
@@ -98,13 +114,18 @@ def api_suggest(lift_name: str):
 
     if not recs:
         # No history — suggest starting with bar
-        return jsonify({
-            "default": {"weight": bar_weight, "reps": 5,
-                        "orm": effective_1rm(bar_weight, 5),
-                        "plates": "bar"},
-            "alternatives": [],
-            "last": None,
-        })
+        return jsonify(
+            {
+                "default": {
+                    "weight": bar_weight,
+                    "reps": 5,
+                    "orm": effective_1rm(bar_weight, 5),
+                    "plates": "bar",
+                },
+                "alternatives": [],
+                "last": None,
+            }
+        )
 
     last = recs[-1]
     assert last.weight is not None and last.reps is not None
@@ -112,7 +133,8 @@ def api_suggest(lift_name: str):
 
     # Add plate info
     suggestion["default"]["plates"] = plates_for_weight(
-        suggestion["default"]["weight"], bar_weight)
+        suggestion["default"]["weight"], bar_weight
+    )
     for alt in suggestion["alternatives"]:
         alt["plates"] = plates_for_weight(alt["weight"], bar_weight)
 
@@ -139,15 +161,19 @@ def api_warmup():
     sets = generate_workout(weight, reps, num_sets, bar_weight)
     result = []
     for s in sets:
-        result.append({
-            "weight": s.weight,
-            "reps": s.reps,
-            "set_type": s.set_type,
-            "rest_seconds": s.rest_seconds,
-            "plates": plates_for_weight(s.weight, bar_weight),
-            "orm": effective_1rm(s.weight, s.reps) if s.set_type == "work" else None,
-            "volume": volume(s.weight, s.reps) if s.set_type == "work" else None,
-        })
+        result.append(
+            {
+                "weight": s.weight,
+                "reps": s.reps,
+                "set_type": s.set_type,
+                "rest_seconds": s.rest_seconds,
+                "plates": plates_for_weight(s.weight, bar_weight),
+                "orm": effective_1rm(s.weight, s.reps)
+                if s.set_type == "work"
+                else None,
+                "volume": volume(s.weight, s.reps) if s.set_type == "work" else None,
+            }
+        )
     return jsonify(result)
 
 
@@ -160,11 +186,17 @@ def api_alternatives():
     current_r = int(data["reps"])
     bar_weight = BAR_WEIGHTS.get(lift_name, 45)
 
+    actual_r = data.get("actual_reps")
+
     suggestion = suggest_next(current_w, current_r, bar_weight)
     # Add plate info to alternatives
     for alt in suggestion["alternatives"]:
         alt["plates"] = plates_for_weight(alt["weight"], bar_weight)
-    return jsonify(suggestion["alternatives"])
+
+    result = {"alternatives": suggestion["alternatives"]}
+    if actual_r is not None:
+        result["actual_orm"] = effective_1rm(current_w, int(actual_r))
+    return jsonify(result)
 
 
 @app.route("/api/log", methods=["POST"])
@@ -174,13 +206,15 @@ def api_log():
     records = []
     now = datetime.now()
     for entry in data["sets"]:
-        records.append(LiftRecord(
-            date=now,
-            lift_name=entry["lift_name"],
-            weight=entry.get("weight"),
-            reps=entry.get("reps"),
-            notes=entry.get("notes", ""),
-        ))
+        records.append(
+            LiftRecord(
+                date=now,
+                lift_name=entry["lift_name"],
+                weight=entry.get("weight"),
+                reps=entry.get("reps"),
+                notes=entry.get("notes", ""),
+            )
+        )
 
     append_to_csv(CSV_PATH, records)
     load_records()  # Refresh in-memory state
