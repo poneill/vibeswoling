@@ -1,0 +1,21 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | xargs -I {} bash -c 'if [[ {} == *.py ]]; then ruff check --fix \"{}\" && ruff format \"{}\"; fi'",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | xargs -I {} bash -c 'if [[ {} == *.py ]]; then ty check; fi'",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

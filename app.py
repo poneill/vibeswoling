@@ -1,16 +1,15 @@
 """Flask application for the weightlifting workout logger."""
 
 import os
-from dataclasses import asdict
 from datetime import datetime
 
-from flask import Flask, jsonify, redirect, render_template, request, url_for
+from flask import Flask, jsonify, render_template, request
 
 from csv_parser import append_to_csv, parse_csv
 from models import BAR_WEIGHTS, MAIN_LIFTS, LiftRecord, plates_for_weight
 from onerm import effective_1rm, suggest_next, volume
 from schedule import compute_suggestions, compute_weekly_status
-from warmup import generate_warmup, generate_workout
+from warmup import generate_workout
 
 app = Flask(__name__)
 
@@ -108,6 +107,7 @@ def api_suggest(lift_name: str):
         })
 
     last = recs[-1]
+    assert last.weight is not None and last.reps is not None
     suggestion = suggest_next(last.weight, last.reps, bar_weight)
 
     # Add plate info

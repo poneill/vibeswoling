@@ -1,6 +1,5 @@
 """Warmup set generation algorithm."""
 
-import math
 
 from models import SetPlan
 

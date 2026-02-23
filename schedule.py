@@ -9,7 +9,7 @@ from models import (
     LiftRecord,
     category_for_lift,
 )
-from onerm import effective_1rm, suggest_next
+from onerm import suggest_next
 
 
 def week_start(d: date | None = None) -> date:
