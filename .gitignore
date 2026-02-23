@@ -11,3 +11,6 @@ wheels/
 
 # Screenshots
 .screenshots/
+
+# Playwright MCP logs
+.playwright-mcp/
