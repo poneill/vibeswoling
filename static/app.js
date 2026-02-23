@@ -1,4 +1,103 @@
-/* Core UI logic: history page interactions, workout page state machine, timers. */
+/* Core UI logic: index page, history page, workout page state machine, timers. */
+
+// === Index Page (Weekly Checklist + Suggestions) ===
+
+function initIndexPage() {
+    fetch("/api/today")
+        .then(r => r.json())
+        .then(data => {
+            renderWeekChecklist(data.status);
+            renderTodaySuggestions(data.suggestions);
+        });
+}
+
+function renderWeekChecklist(status) {
+    const container = document.getElementById("week-checklist");
+    const countEl = document.getElementById("week-count");
+
+    countEl.textContent = `${status.done_total} of ${status.target_total}`;
+
+    const categoryLabels = {
+        squat: "Squat",
+        deadlift: "Deadlift",
+        bench: "Bench",
+        ohp: "OHP",
+        pullups: "Pullups",
+    };
+
+    for (const [cat, info] of Object.entries(status.categories)) {
+        const label = categoryLabels[cat] || cat;
+
+        if (cat === "pullups") {
+            // Pullups needs 2x — show as "Pullups (1/2)" or checkmark
+            const done = info.done;
+            const target = info.target;
+            const complete = done >= target;
+            const el = document.createElement("span");
+            el.className = complete ? "text-success fw-semibold" : "text-secondary";
+            el.innerHTML = complete
+                ? `<span class="text-success">&#10003;</span> ${label}`
+                : `<span class="text-secondary">&middot;</span> ${label} (${done}/${target})`;
+            container.appendChild(el);
+        } else {
+            const complete = info.done >= info.target;
+            const el = document.createElement("span");
+            el.className = complete ? "text-success fw-semibold" : "text-secondary";
+            el.innerHTML = complete
+                ? `<span class="text-success">&#10003;</span> ${label}`
+                : `<span class="text-secondary">&middot;</span> ${label}`;
+            container.appendChild(el);
+        }
+    }
+}
+
+function renderTodaySuggestions(suggestions) {
+    const container = document.getElementById("today-suggestions");
+
+    if (suggestions.length === 0) {
+        container.innerHTML = '<p class="text-success">All done this week!</p>';
+        return;
+    }
+
+    suggestions.forEach(s => {
+        const card = document.createElement("a");
+        card.href = `/history/${encodeURIComponent(s.lift_name)}`;
+        card.className = "card bg-dark border-secondary text-decoration-none mb-2 lift-card";
+
+        let detailHtml = "";
+        if (s.last_date) {
+            if (s.last_weight && s.last_reps) {
+                detailHtml = `Last: ${s.last_date} &middot; ${Math.round(s.last_weight)} lbs &times; ${s.last_reps}`;
+            } else if (s.last_weight) {
+                detailHtml = `Last: ${s.last_date} &middot; ${Math.round(s.last_weight)} lbs`;
+            } else if (s.last_reps) {
+                detailHtml = `Last: ${s.last_date} &middot; ${s.last_reps} reps`;
+            } else {
+                detailHtml = `Last: ${s.last_date}`;
+            }
+        } else {
+            detailHtml = "No history yet";
+        }
+
+        let suggestHtml = "";
+        if (s.suggestion) {
+            const d = s.suggestion.default;
+            suggestHtml = `<span class="text-light">Next: ${Math.round(d.weight)} lbs &times; ${d.reps}</span>`;
+        }
+
+        card.innerHTML = `
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title text-capitalize text-light mb-1">${s.lift_name}</h5>
+                    <p class="card-text text-secondary small mb-0">${detailHtml}</p>
+                    ${suggestHtml ? `<p class="card-text small mb-0 mt-1">${suggestHtml}</p>` : ""}
+                </div>
+                <span class="btn btn-outline-danger btn-sm">Start</span>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
 
 // === History Page ===
 
@@ -577,7 +676,7 @@ function completeWorkout() {
         .then(r => r.json())
         .then(data => {
             if (data.status === "ok") {
-                window.location.href = `/history/${encodeURIComponent(workoutState.liftName)}`;
+                window.location.href = "/";
             }
         })
         .catch(err => {

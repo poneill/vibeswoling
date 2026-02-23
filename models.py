@@ -94,6 +94,35 @@ CANONICAL_TO_CSV: dict[str, str] = {
 
 AVAILABLE_PLATES = [45, 25, 15, 10, 5, 2.5]
 
+# ---------- Weekly planning categories ----------
+
+LIFT_CATEGORIES: dict[str, list[str]] = {
+    "squat":    ["barbell squat", "front squat", "safety bar squat"],
+    "deadlift": ["deadlift", "hex bar deadlift"],
+    "bench":    ["bench"],
+    "ohp":      ["overhead press"],
+    "pullups":  ["pullups"],
+}
+
+WEEKLY_TARGETS: dict[str, int] = {
+    "squat": 1,
+    "deadlift": 1,
+    "bench": 1,
+    "ohp": 1,
+    "pullups": 2,
+}
+
+# Reverse lookup: canonical lift name -> category
+_LIFT_TO_CATEGORY: dict[str, str] = {}
+for _cat, _lifts in LIFT_CATEGORIES.items():
+    for _lift in _lifts:
+        _LIFT_TO_CATEGORY[_lift] = _cat
+
+
+def category_for_lift(lift_name: str) -> str | None:
+    """Return the planning category for a canonical lift name, or None."""
+    return _LIFT_TO_CATEGORY.get(lift_name)
+
 
 def plates_for_weight(total_weight: float, bar_weight: float) -> str:
     """Return a human-readable plate breakdown per side.

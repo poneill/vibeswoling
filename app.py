@@ -9,6 +9,7 @@ from flask import Flask, jsonify, redirect, render_template, request, url_for
 from csv_parser import append_to_csv, parse_csv
 from models import BAR_WEIGHTS, MAIN_LIFTS, LiftRecord, plates_for_weight
 from onerm import effective_1rm, suggest_next, volume
+from schedule import compute_suggestions, compute_weekly_status
 from warmup import generate_warmup, generate_workout
 
 app = Flask(__name__)
@@ -184,6 +185,14 @@ def api_log():
     append_to_csv(CSV_PATH, records)
     load_records()  # Refresh in-memory state
     return jsonify({"status": "ok", "count": len(records)})
+
+
+@app.route("/api/today")
+def api_today():
+    """Return weekly checklist status and today's suggestions."""
+    status = compute_weekly_status(RECORDS)
+    suggestions = compute_suggestions(RECORDS)
+    return jsonify({"status": status, "suggestions": suggestions})
 
 
 @app.route("/api/plates")
