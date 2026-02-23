@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ lift_name }} Workout{% endblock %}
+
+{% block content %}
+<h1 id="workout-title" class="mb-1">{{ lift_name }}</h1>
+<p id="workout-target" class="text-secondary mb-3"></p>
+
+<div id="workout-sets"></div>
+
+<div id="timer-display" class="timer-display hidden">
+    <div class="timer-label">Rest</div>
+    <div class="timer-time" id="timer-time">5:00</div>
+    <button class="btn btn-outline-secondary btn-sm" id="timer-skip">Skip</button>
+</div>
+
+<div id="failed-modal" class="modal-overlay hidden">
+    <div class="modal-panel">
+        <h2 class="h5 mb-3">Choose Alternative</h2>
+        <div id="failed-alternatives"></div>
+        <button class="btn btn-secondary btn-sm mt-2" onclick="closeFailedModal()">Cancel</button>
+    </div>
+</div>
+
+<div class="d-flex gap-2 my-3" id="workout-actions">
+    <button id="complete-btn" class="btn btn-danger hidden"
+            onclick="completeWorkout()">Complete Workout</button>
+    <a href="/history/{{ lift_name }}" class="btn btn-outline-secondary">Cancel</a>
+</div>
+
+<div class="mt-3" id="notes-section">
+    <label for="workout-notes" class="form-label text-secondary small">Notes</label>
+    <textarea id="workout-notes" class="form-control bg-dark text-light border-secondary"
+              placeholder="How did it feel?" rows="2"></textarea>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const LIFT_NAME = "{{ lift_name }}";
+    const BAR_WEIGHT = {{ bar_weight }};
+    const IS_PULLUPS = {{ is_pullups|tojson }};
+
+    const params = new URLSearchParams(window.location.search);
+    const WORK_WEIGHT = parseFloat(params.get("w")) || BAR_WEIGHT;
+    const WORK_REPS = parseInt(params.get("r")) || 5;
+    const NUM_SETS = parseInt(params.get("sets")) || 3;
+
+    initWorkoutPage(LIFT_NAME, WORK_WEIGHT, WORK_REPS, NUM_SETS, BAR_WEIGHT, IS_PULLUPS);
+</script>
+{% endblock %}

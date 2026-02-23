@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ lift_name }} History{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">{{ lift_name }}</h1>
+
+{% if not is_pullups %}
+<div class="mb-4">
+    <h2 class="h6 text-secondary">Progress Over Time</h2>
+    <div id="temporal-chart"></div>
+</div>
+
+<div class="mb-4">
+    <h2 class="h6 text-secondary">Weight / Rep Map</h2>
+    <div id="isocline-chart"></div>
+</div>
+{% endif %}
+
+<div class="d-flex gap-2 my-3">
+    <button id="start-workout-btn" class="btn btn-danger">Start Workout</button>
+</div>
+
+<div id="suggestion-modal" class="modal-overlay hidden">
+    <div class="modal-panel">
+        <h2 class="h5 mb-3">Next Workout</h2>
+        <div id="suggestion-body"></div>
+        <button class="btn btn-secondary btn-sm mt-2" onclick="closeSuggestionModal()">Cancel</button>
+    </div>
+</div>
+
+<h2 class="h6 text-secondary">History</h2>
+<div class="table-responsive">
+    <table id="history-table" class="table table-dark table-striped table-sm">
+        <thead>
+            <tr>
+                <th>Date</th>
+                {% if not is_pullups %}<th>Weight</th>{% endif %}
+                <th>Reps</th>
+                {% if not is_pullups %}<th>1RM</th><th>Volume</th>{% endif %}
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='charts.js') }}"></script>
+<script>
+    const LIFT_NAME = "{{ lift_name }}";
+    const BAR_WEIGHT = {{ bar_weight }};
+    const IS_PULLUPS = {{ is_pullups|tojson }};
+    initHistoryPage(LIFT_NAME, BAR_WEIGHT, IS_PULLUPS);
+</script>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Lifts{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">Choose a Lift</h1>
+<div class="row row-cols-1 row-cols-sm-2 g-3">
+    {% for lift in lifts %}
+    <div class="col">
+        <a href="/history/{{ lift.name }}" class="card bg-dark border-secondary text-decoration-none h-100 lift-card">
+            <div class="card-body">
+                <h5 class="card-title text-capitalize text-light mb-1">{{ lift.name }}</h5>
+                {% if lift.last_date %}
+                <p class="card-text text-secondary small mb-0">
+                    {{ lift.last_date }}
+                    {% if lift.last_weight %}&middot; {{ lift.last_weight|int }} lbs{% endif %}
+                    {% if lift.last_reps %}&times; {{ lift.last_reps }}{% endif %}
+                </p>
+                {% else %}
+                <p class="card-text text-secondary small mb-0">No history</p>
+                {% endif %}
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
