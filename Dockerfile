@@ -9,6 +9,7 @@ RUN uv sync --frozen --no-dev
 
 COPY . .
 
+ENV UV_CACHE_DIR=/tmp/uv-cache
 ENV CSV_PATH=/data/lifts.csv
 
 EXPOSE 5050
