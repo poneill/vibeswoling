@@ -699,6 +699,95 @@ function completeWorkout() {
         });
 }
 
+// === Calculator Page ===
+
+function initCalculatorPage() {
+    const btn = document.getElementById("calc-btn");
+    const weightInput = document.getElementById("calc-weight");
+    const repsInput = document.getElementById("calc-reps");
+    const barSelect = document.getElementById("calc-bar");
+
+    btn.addEventListener("click", () => {
+        const weight = parseFloat(weightInput.value);
+        const reps = parseInt(repsInput.value);
+        const barWeight = parseFloat(barSelect.value);
+        if (!weight || !reps || reps < 1) return;
+        fetchCalculation(weight, reps, barWeight);
+    });
+}
+
+function fetchCalculation(weight, reps, barWeight) {
+    fetch("/api/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weight, reps, bar_weight: barWeight }),
+    })
+        .then(r => r.json())
+        .then(data => {
+            renderCalcResult(data);
+            renderCalcChart(data);
+            renderCalcAlternatives(data);
+        });
+}
+
+function renderCalcResult(data) {
+    const el = document.getElementById("calc-result");
+    el.classList.remove("hidden");
+    el.innerHTML = `
+        <div class="d-flex gap-4">
+            <div>
+                <span class="text-secondary small">Current 1RM</span>
+                <div class="fs-4 fw-bold">${data.current_orm.toFixed(1)} lbs</div>
+                <span class="text-secondary small">${data.input.weight} lbs × ${data.input.reps} (${data.input.plates})</span>
+            </div>
+            <div>
+                <span class="text-secondary small">Target 1RM</span>
+                <div class="fs-4 fw-bold" style="color: #4ecca3;">${data.target_orm.toFixed(1)} lbs</div>
+                <span class="text-secondary small">${data.default.weight} lbs × ${data.default.reps} (${data.default.plates})</span>
+            </div>
+        </div>
+    `;
+}
+
+function renderCalcChart(data) {
+    const container = document.getElementById("calc-chart-container");
+    container.classList.remove("hidden");
+    const chartEl = document.getElementById("calc-chart");
+    chartEl.innerHTML = "";
+    renderCalculatorChart(data, "#calc-chart");
+}
+
+function renderCalcAlternatives(data) {
+    const section = document.getElementById("calc-alternatives");
+    const list = document.getElementById("calc-alt-list");
+    list.innerHTML = "";
+
+    const allOptions = [data.default, ...data.alternatives];
+    if (allOptions.length === 0) {
+        section.classList.add("hidden");
+        return;
+    }
+
+    section.classList.remove("hidden");
+
+    // Default first (highlighted)
+    list.appendChild(createCalcOption(data.default, true));
+
+    data.alternatives.forEach(alt => {
+        list.appendChild(createCalcOption(alt, false));
+    });
+}
+
+function createCalcOption(option, isDefault) {
+    const btn = document.createElement("div");
+    btn.className = "suggestion-option" + (isDefault ? " suggestion-default" : "");
+    btn.innerHTML = `
+        <div class="so-main">${option.weight} lbs × ${option.reps} (${option.plates})</div>
+        <div class="so-detail">Est. 1RM: ${option.orm.toFixed(1)} lbs</div>
+    `;
+    return btn;
+}
+
 // Expose for onclick in template
 window.completeWorkout = completeWorkout;
 window.closeSuggestionModal = closeSuggestionModal;

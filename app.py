@@ -80,6 +80,11 @@ def workout_page(lift_name: str):
     )
 
 
+@app.route("/calculator")
+def calculator_page():
+    return render_template("calculator.html")
+
+
 # --- API routes ---
 
 
@@ -197,6 +202,38 @@ def api_alternatives():
     if actual_r is not None:
         result["actual_orm"] = effective_1rm(current_w, int(actual_r))
     return jsonify(result)
+
+
+@app.route("/api/calculate", methods=["POST"])
+def api_calculate():
+    """1RM calculator: given weight/reps, return ORM band and alternatives."""
+    data = request.json
+    weight = float(data["weight"])
+    reps = int(data["reps"])
+    bar_weight = float(data.get("bar_weight", 45))
+
+    current_orm = effective_1rm(weight, reps)
+    suggestion = suggest_next(weight, reps, bar_weight)
+
+    suggestion["default"]["plates"] = plates_for_weight(
+        suggestion["default"]["weight"], bar_weight
+    )
+    for alt in suggestion["alternatives"]:
+        alt["plates"] = plates_for_weight(alt["weight"], bar_weight)
+
+    return jsonify(
+        {
+            "current_orm": current_orm,
+            "target_orm": suggestion["default"]["orm"],
+            "default": suggestion["default"],
+            "alternatives": suggestion["alternatives"],
+            "input": {
+                "weight": weight,
+                "reps": reps,
+                "plates": plates_for_weight(weight, bar_weight),
+            },
+        }
+    )
 
 
 @app.route("/api/log", methods=["POST"])

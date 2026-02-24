@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}1RM Calculator{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">1RM Calculator</h1>
+
+<div class="d-flex gap-2 align-items-end mb-3">
+    <div>
+        <label for="calc-weight" class="form-label text-secondary small mb-1">Weight (lbs)</label>
+        <input type="number" id="calc-weight" class="form-control bg-dark text-light border-secondary"
+               placeholder="185" min="0" step="5" inputmode="numeric" style="width: 100px;">
+    </div>
+    <div>
+        <label for="calc-reps" class="form-label text-secondary small mb-1">Reps</label>
+        <input type="number" id="calc-reps" class="form-control bg-dark text-light border-secondary"
+               placeholder="5" min="1" max="20" inputmode="numeric" style="width: 80px;">
+    </div>
+    <div>
+        <label for="calc-bar" class="form-label text-secondary small mb-1">Bar</label>
+        <select id="calc-bar" class="form-select bg-dark text-light border-secondary" style="width: 80px;">
+            <option value="45" selected>45</option>
+            <option value="65">65</option>
+        </select>
+    </div>
+    <button id="calc-btn" class="btn btn-danger">Calculate</button>
+</div>
+
+<div id="calc-result" class="hidden mb-3"></div>
+
+<div id="calc-chart-container" class="hidden mb-4" style="position: relative;">
+    <h2 class="h6 text-secondary">Weight / Rep Map</h2>
+    <div id="calc-chart"></div>
+    <div id="calc-tooltip" class="calc-tooltip hidden"></div>
+</div>
+
+<div id="calc-alternatives" class="hidden">
+    <h2 class="h6 text-secondary mb-2">Progression Options</h2>
+    <div id="calc-alt-list"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='charts.js') }}"></script>
+<script>initCalculatorPage();</script>
+{% endblock %}

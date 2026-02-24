@@ -242,3 +242,164 @@ function renderIsoclineChart(data, selector) {
         .attr("text-anchor", "start")
         .text(d => d.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }));
 }
+
+// --- Calculator Chart ---
+function renderCalculatorChart(data, selector) {
+    const container = document.querySelector(selector);
+    if (!container) return;
+
+    const inputW = data.input.weight;
+    const inputR = data.input.reps;
+    const currentOrm = data.current_orm;
+    const targetOrm = data.target_orm;
+
+    const width = container.clientWidth;
+    const height = 350;
+    const margin = { top: 20, right: 60, bottom: 35, left: 55 };
+
+    const svg = d3.select(selector).append("svg")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .attr("preserveAspectRatio", "xMidYMid meet");
+
+    // Axis ranges based on input — show enough context
+    const minWeight = Math.max(0, inputW - 60);
+    const maxWeight = inputW + 30;
+
+    const x = d3.scaleLinear().domain([1, 20]).range([margin.left, width - margin.right]);
+    const y = d3.scaleLinear().domain([minWeight, maxWeight]).range([height - margin.bottom, margin.top]);
+
+    // Axes
+    svg.append("g")
+        .attr("transform", `translate(0,${height - margin.bottom})`)
+        .call(d3.axisBottom(x).ticks(10).tickFormat(d => d))
+        .attr("color", "#666");
+    svg.append("g")
+        .attr("transform", `translate(${margin.left},0)`)
+        .call(d3.axisLeft(y).ticks(8))
+        .attr("color", "#666");
+    svg.append("text").attr("x", width / 2).attr("y", height - 2)
+        .attr("fill", "#999").attr("font-size", "11px").attr("text-anchor", "middle").text("Reps");
+    svg.append("text").attr("x", margin.left).attr("y", margin.top - 6)
+        .attr("fill", "#999").attr("font-size", "11px").text("Weight (lbs)");
+
+    // Isocline curves
+    const ormStep = 25;
+    const ormMin = Math.floor((currentOrm - 75) / ormStep) * ormStep;
+    const ormMax = Math.ceil((targetOrm + 50) / ormStep) * ormStep;
+    const curveLine = d3.line().x(d => x(d.reps)).y(d => y(d.weight));
+
+    for (let orm = ormMin; orm <= ormMax; orm += ormStep) {
+        const curveData = [];
+        for (let r = 1; r <= 20; r++) {
+            const w = weightForOrm(orm, r);
+            if (w >= minWeight && w <= maxWeight) {
+                curveData.push({ reps: r, weight: w });
+            }
+        }
+        if (curveData.length < 2) continue;
+
+        svg.append("path")
+            .datum(curveData)
+            .attr("fill", "none")
+            .attr("stroke", "#444")
+            .attr("stroke-width", 1)
+            .attr("stroke-dasharray", "4,4")
+            .attr("d", curveLine);
+
+        const last = curveData[curveData.length - 1];
+        svg.append("text")
+            .attr("x", x(last.reps) + 4)
+            .attr("y", y(last.weight) + 3)
+            .attr("fill", "#555")
+            .attr("font-size", "9px")
+            .text(orm);
+    }
+
+    // Shaded band between current and target ORM
+    const bandUpper = []; // target ORM curve (higher weights)
+    const bandLower = []; // current ORM curve (lower weights)
+    for (let r = 1; r <= 20; r++) {
+        const wUpper = weightForOrm(targetOrm, r);
+        const wLower = weightForOrm(currentOrm, r);
+        if (wUpper >= minWeight && wLower <= maxWeight) {
+            bandUpper.push({ reps: r, weight: Math.min(wUpper, maxWeight) });
+            bandLower.push({ reps: r, weight: Math.max(wLower, minWeight) });
+        }
+    }
+    if (bandUpper.length > 1) {
+        const bandPath = [...bandUpper, ...bandLower.reverse()];
+        const area = d3.line().x(d => x(d.reps)).y(d => y(d.weight));
+        svg.append("path")
+            .datum(bandPath)
+            .attr("fill", "#4ecca3")
+            .attr("opacity", 0.12)
+            .attr("d", area);
+    }
+
+    // Alternative points
+    data.alternatives.forEach(alt => {
+        svg.append("circle")
+            .attr("cx", x(alt.reps))
+            .attr("cy", y(alt.weight))
+            .attr("r", 3.5)
+            .attr("fill", "#4ecca3")
+            .attr("opacity", 0.6);
+    });
+
+    // Default point (W+5, same reps)
+    svg.append("circle")
+        .attr("cx", x(data.default.reps))
+        .attr("cy", y(data.default.weight))
+        .attr("r", 5)
+        .attr("fill", "#4ecca3")
+        .attr("stroke", "#1a1a2e")
+        .attr("stroke-width", 1.5);
+
+    // Input point
+    svg.append("circle")
+        .attr("cx", x(inputR))
+        .attr("cy", y(inputW))
+        .attr("r", 6)
+        .attr("fill", "#e94560")
+        .attr("stroke", "#1a1a2e")
+        .attr("stroke-width", 1.5);
+
+    // Hover interaction
+    const tooltip = document.getElementById("calc-tooltip");
+    const crosshairV = svg.append("line").attr("stroke", "#666").attr("stroke-width", 0.5).attr("stroke-dasharray", "2,2").style("display", "none");
+    const crosshairH = svg.append("line").attr("stroke", "#666").attr("stroke-width", 0.5).attr("stroke-dasharray", "2,2").style("display", "none");
+
+    svg.append("rect")
+        .attr("x", margin.left)
+        .attr("y", margin.top)
+        .attr("width", width - margin.left - margin.right)
+        .attr("height", height - margin.top - margin.bottom)
+        .attr("fill", "transparent")
+        .on("mousemove", function(event) {
+            const [mx, my] = d3.pointer(event);
+            const rawReps = Math.round(x.invert(mx));
+            const rawWeight = Math.round(y.invert(my) / 5) * 5;
+            const reps = Math.max(1, Math.min(20, rawReps));
+            const weight = Math.max(minWeight, Math.min(maxWeight, rawWeight));
+            const orm = effectiveOrm(weight, reps);
+
+            tooltip.classList.remove("hidden");
+            tooltip.textContent = `${weight} lbs × ${reps} → 1RM: ${orm.toFixed(1)}`;
+
+            // Position tooltip relative to chart container
+            const rect = container.getBoundingClientRect();
+            const svgRect = container.querySelector("svg").getBoundingClientRect();
+            tooltip.style.left = (event.clientX - rect.left + 12) + "px";
+            tooltip.style.top = (event.clientY - rect.top - 10) + "px";
+
+            // Crosshairs
+            const cx = x(reps), cy = y(weight);
+            crosshairV.attr("x1", cx).attr("y1", margin.top).attr("x2", cx).attr("y2", height - margin.bottom).style("display", null);
+            crosshairH.attr("x1", margin.left).attr("y1", cy).attr("x2", width - margin.right).attr("y2", cy).style("display", null);
+        })
+        .on("mouseleave", function() {
+            tooltip.classList.add("hidden");
+            crosshairV.style("display", "none");
+            crosshairH.style("display", "none");
+        });
+}
