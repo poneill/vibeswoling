@@ -72,8 +72,11 @@ def history_page(lift_name: str):
 def workout_page(lift_name: str):
     bar_weight = BAR_WEIGHTS.get(lift_name, 45)
     is_pullups = lift_name == "pullups"
+    template = (
+        "pyramid.html" if request.args.get("mode") == "pyramid" else "workout.html"
+    )
     return render_template(
-        "workout.html",
+        template,
         lift_name=lift_name,
         bar_weight=bar_weight,
         is_pullups=is_pullups,

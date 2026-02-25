@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Pyramid Timer{% endblock %}
+
+{% block body_content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='pyramid.css') }}">
+<div class="pyramid-page">
+    <div class="pyr-app">
+        <div class="pyr-sidebar">
+            <h2>History</h2>
+            <table class="pyr-table">
+                <thead>
+                    <tr>
+                        <th>Reps</th>
+                        <th>Total Reps</th>
+                        <th>Volume</th>
+                        <th>Cumulative</th>
+                    </tr>
+                </thead>
+                <tbody id="pyr-history-log"></tbody>
+            </table>
+        </div>
+        <div class="pyr-main">
+            <canvas id="pyr-progress-chart" class="pyr-hidden"></canvas>
+
+            <div id="pyr-setup-screen">
+                <h1>Pyramid Timer</h1>
+                <div class="pyr-input-grid">
+                    <div class="pyr-input-group">
+                        <label for="pyr-max-reps">Max Reps</label>
+                        <input type="number" id="pyr-max-reps" value="5" min="1">
+                    </div>
+                    <div class="pyr-input-group">
+                        <label for="pyr-rest-period">Rest Period (seconds)</label>
+                        <input type="number" id="pyr-rest-period" value="90" min="1">
+                    </div>
+                    <div class="pyr-input-group">
+                        <label for="pyr-bodyweight">Bodyweight (lbs)</label>
+                        <input type="number" id="pyr-bodyweight" value="195" min="1">
+                    </div>
+                </div>
+                <div id="pyr-setup-summary"></div>
+                <button id="pyr-start-btn" class="btn btn-danger btn-lg mt-3">Start</button>
+            </div>
+
+            <div id="pyr-workout-screen" class="pyr-hidden">
+                <div id="pyr-current-set-label">Set</div>
+                <div id="pyr-current-reps">1</div>
+                <div id="pyr-reps-label">reps</div>
+                <div id="pyr-status-text">Do your reps, then press Space or click Done</div>
+                <div id="pyr-action-slot">
+                    <button id="pyr-done-btn" class="btn btn-success pyr-invisible">Done</button>
+                    <div id="pyr-rest-group" class="pyr-invisible">
+                        <div id="pyr-timer-display">00:00</div>
+                        <button id="pyr-skip-btn" class="btn btn-outline-secondary mt-3">Skip Rest</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pyr-done-screen" class="pyr-hidden">
+                <h1>Done!</h1>
+                <p>Pyramid complete.</p>
+                <button class="btn btn-success btn-lg" onclick="completeWorkout()">Complete Workout</button>
+                <div class="mt-3">
+                    <a href="/history/pullups" class="text-secondary">Back to Pullups</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='pyramid.js') }}"></script>
+<script>initPyramidWorkout();</script>
+{% endblock %}

@@ -114,7 +114,7 @@ function initHistoryPage(liftName, barWeight, isPullups) {
 
     document.getElementById("start-workout-btn").addEventListener("click", () => {
         if (isPullups) {
-            window.location.href = `/workout/${encodeURIComponent(liftName)}`;
+            showPyramidChoiceModal(liftName);
             return;
         }
         showSuggestionModal(liftName);
@@ -267,6 +267,24 @@ function createSuggestionButton(option, liftName, isDefault) {
 
 function closeSuggestionModal() {
     document.getElementById("suggestion-modal").classList.add("hidden");
+}
+
+// === Pyramid Choice Modal ===
+
+function showPyramidChoiceModal(liftName) {
+    const modal = document.getElementById("pyramid-choice-modal");
+    modal.classList.remove("hidden");
+
+    document.getElementById("choice-regular").onclick = () => {
+        window.location.href = `/workout/${encodeURIComponent(liftName)}`;
+    };
+    document.getElementById("choice-pyramid").onclick = () => {
+        window.location.href = `/workout/${encodeURIComponent(liftName)}?mode=pyramid`;
+    };
+}
+
+function closePyramidChoiceModal() {
+    document.getElementById("pyramid-choice-modal").classList.add("hidden");
 }
 
 
@@ -792,3 +810,4 @@ function createCalcOption(option, isDefault) {
 window.completeWorkout = completeWorkout;
 window.closeSuggestionModal = closeSuggestionModal;
 window.closeFailedModal = closeFailedModal;
+window.closePyramidChoiceModal = closePyramidChoiceModal;
