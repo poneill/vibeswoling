@@ -27,27 +27,24 @@ function renderWeekChecklist(status) {
 
     for (const [cat, info] of Object.entries(status.categories)) {
         const label = categoryLabels[cat] || cat;
+        const done = info.done;
+        const target = info.target;
+        const complete = done >= target;
+        const inProgress = done > 0 && !complete;
 
-        if (cat === "pullups") {
-            // Pullups needs 2x — show as "Pullups (1/2)" or checkmark
-            const done = info.done;
-            const target = info.target;
-            const complete = done >= target;
-            const el = document.createElement("span");
-            el.className = complete ? "text-success fw-semibold" : "text-secondary";
-            el.innerHTML = complete
-                ? `<span class="text-success">&#10003;</span> ${label}`
-                : `<span class="text-secondary">&middot;</span> ${label} (${done}/${target})`;
-            container.appendChild(el);
+        const el = document.createElement("span");
+        if (complete) {
+            el.className = "text-success fw-semibold";
+            el.innerHTML = `<span class="text-success">&#10003;</span> ${label}`;
+        } else if (inProgress) {
+            el.className = "fw-semibold";
+            el.style.color = "#f0a500";
+            el.innerHTML = `<span style="color: #f0a500;">&#9656;</span> ${label} (${done}/${target})`;
         } else {
-            const complete = info.done >= info.target;
-            const el = document.createElement("span");
-            el.className = complete ? "text-success fw-semibold" : "text-secondary";
-            el.innerHTML = complete
-                ? `<span class="text-success">&#10003;</span> ${label}`
-                : `<span class="text-secondary">&middot;</span> ${label}`;
-            container.appendChild(el);
+            el.className = "text-secondary";
+            el.innerHTML = `<span class="text-secondary">&middot;</span> ${label}`;
         }
+        container.appendChild(el);
     }
 }
 
