@@ -277,5 +277,39 @@ def api_plates():
     return jsonify({"plates": plates_for_weight(weight, bar)})
 
 
+@app.route("/api/activity")
+def api_activity():
+    """Return per-day activity for the contribution grid (last 53 weeks)."""
+    from collections import defaultdict
+    from datetime import date, timedelta
+
+    from models import category_for_lift
+
+    today = date.today()
+    # Start from the Sunday 52 weeks ago (to fill a full grid)
+    grid_start = today - timedelta(days=today.weekday() + 1 + 52 * 7)
+    if today.weekday() == 6:  # today is Sunday
+        grid_start = today - timedelta(weeks=52)
+
+    day_cats: dict[date, set[str]] = defaultdict(set)
+    for r in RECORDS:
+        rd = r.date.date() if isinstance(r.date, datetime) else r.date
+        if rd >= grid_start:
+            cat = category_for_lift(r.lift_name)
+            if cat:
+                day_cats[rd].add(cat)
+
+    result = []
+    for d, cats in sorted(day_cats.items()):
+        result.append(
+            {
+                "date": d.isoformat(),
+                "count": len(cats),
+                "categories": sorted(cats),
+            }
+        )
+    return jsonify(result)
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5050)

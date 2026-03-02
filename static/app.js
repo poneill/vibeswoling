@@ -9,6 +9,140 @@ function initIndexPage() {
             renderWeekChecklist(data.status);
             renderTodaySuggestions(data.suggestions);
         });
+    initActivityGrid();
+}
+
+function initActivityGrid() {
+    fetch("/api/activity")
+        .then(r => r.json())
+        .then(renderActivityGrid);
+}
+
+function renderActivityGrid(activityData) {
+    const container = document.getElementById("activity-grid");
+    if (!container) return;
+
+    // Build lookup: "YYYY-MM-DD" -> {count, categories}
+    const lookup = {};
+    activityData.forEach(d => {
+        lookup[d.date] = d;
+    });
+
+    // Build 53 weeks of dates ending on today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dayOfWeek = today.getDay(); // 0=Sun
+    // Grid ends on Saturday of this week (or today's week)
+    const gridEnd = new Date(today);
+    gridEnd.setDate(gridEnd.getDate() + (6 - dayOfWeek));
+    const gridStart = new Date(gridEnd);
+    gridStart.setDate(gridStart.getDate() - 52 * 7 - 6); // 53 weeks total, start on Sunday
+
+    // Generate all dates
+    const weeks = [];
+    const d = new Date(gridStart);
+    let currentWeek = [];
+    while (d <= gridEnd) {
+        currentWeek.push(new Date(d));
+        if (currentWeek.length === 7) {
+            weeks.push(currentWeek);
+            currentWeek = [];
+        }
+        d.setDate(d.getDate() + 1);
+    }
+    if (currentWeek.length) weeks.push(currentWeek);
+
+    const totalCols = weeks.length;
+
+    // Month labels row
+    const monthLabels = document.createElement("div");
+    monthLabels.className = "activity-month-labels";
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    let lastMonth = -1;
+    weeks.forEach(week => {
+        const span = document.createElement("span");
+        const firstDay = week[0];
+        const month = firstDay.getMonth();
+        if (month !== lastMonth && firstDay.getDate() <= 7) {
+            span.textContent = monthNames[month];
+            lastMonth = month;
+        }
+        monthLabels.appendChild(span);
+    });
+    // Grid area with day labels + scrollable content
+    const gridRow = document.createElement("div");
+    gridRow.style.display = "flex";
+
+    // Day-of-week labels
+    const dayLabels = document.createElement("div");
+    dayLabels.className = "activity-day-labels";
+    ["", "Mon", "", "Wed", "", "Fri", ""].forEach(label => {
+        const span = document.createElement("span");
+        span.textContent = label;
+        dayLabels.appendChild(span);
+    });
+    gridRow.appendChild(dayLabels);
+
+    // Cell grid
+    const gridWrapper = document.createElement("div");
+    gridWrapper.className = "activity-grid-wrapper";
+    const grid = document.createElement("div");
+    grid.className = "activity-grid";
+    grid.style.gridTemplateColumns = `repeat(${totalCols}, 12px)`;
+
+    // Tooltip element
+    const tooltip = document.createElement("div");
+    tooltip.className = "activity-tooltip hidden";
+    document.body.appendChild(tooltip);
+
+    weeks.forEach(week => {
+        week.forEach(date => {
+            const cell = document.createElement("div");
+            cell.className = "activity-cell";
+
+            const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+            const entry = lookup[iso];
+            const isFuture = date > today;
+
+            if (isFuture) {
+                cell.style.opacity = "0.3";
+            } else if (entry) {
+                cell.dataset.level = "1";
+            }
+
+            // Tooltip
+            cell.addEventListener("mouseenter", e => {
+                const dateStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                if (entry) {
+                    tooltip.textContent = `${dateStr} — ${entry.categories.join(", ")}`;
+                } else if (!isFuture) {
+                    tooltip.textContent = `${dateStr} — no activity`;
+                } else {
+                    return;
+                }
+                tooltip.classList.remove("hidden");
+                tooltip.style.left = e.clientX + 12 + "px";
+                tooltip.style.top = e.clientY - 8 + "px";
+            });
+            cell.addEventListener("mousemove", e => {
+                tooltip.style.left = e.clientX + 12 + "px";
+                tooltip.style.top = e.clientY - 8 + "px";
+            });
+            cell.addEventListener("mouseleave", () => {
+                tooltip.classList.add("hidden");
+            });
+
+            grid.appendChild(cell);
+        });
+    });
+
+    gridWrapper.appendChild(monthLabels);
+    gridWrapper.appendChild(grid);
+    gridRow.appendChild(gridWrapper);
+    container.appendChild(gridRow);
+
+    // Scroll to the right so recent activity is visible
+    gridWrapper.scrollLeft = gridWrapper.scrollWidth;
 }
 
 function renderWeekChecklist(status) {
@@ -652,6 +786,7 @@ function startTimer(seconds, onComplete) {
 
     display.classList.remove("hidden", "done");
     timerTarget = Date.now() + seconds * 1000;
+    let goTimeout = null;
 
     function update() {
         const remaining = Math.max(0, timerTarget - Date.now());
@@ -664,7 +799,7 @@ function startTimer(seconds, onComplete) {
             display.classList.add("done");
             timeEl.textContent = "GO!";
             // Auto-hide after 3 seconds
-            setTimeout(() => {
+            goTimeout = setTimeout(() => {
                 display.classList.add("hidden");
                 onComplete();
             }, 3000);
@@ -678,6 +813,7 @@ function startTimer(seconds, onComplete) {
     // Skip button
     skipBtn.onclick = () => {
         clearInterval(timerInterval);
+        clearTimeout(goTimeout);
         display.classList.add("hidden");
         onComplete();
     };
