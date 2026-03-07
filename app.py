@@ -15,11 +15,26 @@ app = Flask(__name__)
 
 CSV_PATH = os.path.expanduser("~/misc/lifts.csv")
 RECORDS: list[LiftRecord] = []
+_csv_mtime: float = 0.0
 
 
 def load_records():
-    global RECORDS
+    global RECORDS, _csv_mtime
     RECORDS = parse_csv(CSV_PATH)
+    try:
+        _csv_mtime = os.path.getmtime(CSV_PATH)
+    except OSError:
+        _csv_mtime = 0.0
+
+
+def _refresh_if_changed():
+    """Reload records if the CSV file has been modified since last load."""
+    try:
+        mtime = os.path.getmtime(CSV_PATH)
+    except OSError:
+        return
+    if mtime != _csv_mtime:
+        load_records()
 
 
 load_records()
@@ -31,6 +46,7 @@ load_records()
 @app.route("/")
 def index():
     """Landing page: lift selector with recent activity."""
+    _refresh_if_changed()
     lift_summaries = []
     for lift in MAIN_LIFTS:
         recs = [r for r in RECORDS if r.lift_name == lift]
@@ -94,6 +110,7 @@ def calculator_page():
 @app.route("/api/history/<lift_name>")
 def api_history(lift_name: str):
     """Return JSON of all records for a given lift."""
+    _refresh_if_changed()
     recs = [r for r in RECORDS if r.lift_name == lift_name]
     bar_weight = BAR_WEIGHTS.get(lift_name, 45)
     result = []
@@ -264,6 +281,7 @@ def api_log():
 @app.route("/api/today")
 def api_today():
     """Return weekly checklist status and today's suggestions."""
+    _refresh_if_changed()
     status = compute_weekly_status(RECORDS)
     suggestions = compute_suggestions(RECORDS)
     return jsonify({"status": status, "suggestions": suggestions})
@@ -280,6 +298,7 @@ def api_plates():
 @app.route("/api/activity")
 def api_activity():
     """Return per-day activity for the contribution grid (last 53 weeks)."""
+    _refresh_if_changed()
     from collections import defaultdict
     from datetime import date, timedelta
 
