@@ -1,0 +1,11 @@
+services:
+  web:
+    build: .
+    user: "${UID:-1000}:${GID:-1000}"
+    ports:
+      - "5050:5050"
+    volumes:
+      - ${DATA_DIR:-./data}:/data
+    environment:
+      - CSV_PATH=/data/lifts.csv
+    restart: unless-stopped
