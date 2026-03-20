@@ -10,8 +10,8 @@ body:has(.pyramid-page) { padding-bottom: 0; overflow: hidden; }
 /* Sidebar */
 .pyramid-page .pyr-sidebar {
     width: 320px;
-    background: var(--bs-dark);
-    border-right: 1px solid var(--bs-border-color);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
     padding: 24px;
     overflow-y: auto;
     flex-shrink: 0;
@@ -23,7 +23,7 @@ body:has(.pyramid-page) { padding-bottom: 0; overflow: hidden; }
     font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 2px;
-    color: var(--bs-secondary-color);
+    color: var(--text-muted);
     margin-bottom: 16px;
 }
 
@@ -31,7 +31,7 @@ body:has(.pyramid-page) { padding-bottom: 0; overflow: hidden; }
 .pyramid-page .pyr-table {
     width: 100%;
     border-collapse: collapse;
-    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-variant-numeric: tabular-nums;
     font-size: 13px;
 }
 
@@ -39,24 +39,24 @@ body:has(.pyramid-page) { padding-bottom: 0; overflow: hidden; }
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: var(--bs-secondary-color);
+    color: var(--text-muted);
     text-align: right;
     padding: 6px 8px;
-    border-bottom: 1px solid var(--bs-border-color);
+    border-bottom: 1px solid var(--border);
 }
 
 .pyramid-page .pyr-table thead th:first-child { text-align: left; }
 
 .pyramid-page .pyr-table tbody td {
     padding: 6px 8px;
-    color: var(--bs-secondary-color);
+    color: var(--text-muted);
     text-align: right;
-    border-bottom: 1px solid rgba(var(--bs-border-color-rgb), 0.4);
+    border-bottom: 1px solid var(--border-light);
 }
 
 .pyramid-page .pyr-table tbody td:first-child {
     text-align: left;
-    color: #4ecca3;
+    color: var(--green);
     font-weight: bold;
 }
 
@@ -75,6 +75,7 @@ body:has(.pyramid-page) { padding-bottom: 0; overflow: hidden; }
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    background: var(--bg);
 }
 
 /* Screens */
@@ -85,7 +86,7 @@ body:has(.pyramid-page) { padding-bottom: 0; overflow: hidden; }
 .pyramid-page #pyr-done-screen h1 {
     font-size: 48px;
     margin-bottom: 40px;
-    color: var(--bs-body-color);
+    color: var(--text);
 }
 
 /* Input grid */
@@ -101,14 +102,14 @@ body:has(.pyramid-page) { padding-bottom: 0; overflow: hidden; }
     font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: var(--bs-secondary-color);
+    color: var(--text-muted);
     margin-bottom: 8px;
 }
 
 .pyramid-page .pyr-input-group input {
-    background: var(--bs-dark);
-    border: 2px solid var(--bs-border-color);
-    color: var(--bs-body-color);
+    background: var(--bg);
+    border: 2px solid var(--border);
+    color: var(--text);
     font-size: 24px;
     padding: 12px 20px;
     border-radius: 8px;
@@ -129,19 +130,19 @@ body:has(.pyramid-page) { padding-bottom: 0; overflow: hidden; }
 }
 
 .pyramid-page .pyr-input-group input:focus {
-    border-color: var(--bs-secondary-color);
+    border-color: var(--text-muted);
 }
 
 /* Setup summary */
 .pyramid-page #pyr-setup-summary {
     font-size: 16px;
-    color: var(--bs-secondary-color);
+    color: var(--text-muted);
     letter-spacing: 0.5px;
     margin-bottom: 4px;
 }
 
 .pyramid-page #pyr-setup-summary span {
-    color: var(--bs-body-color);
+    color: var(--text);
     font-weight: bold;
 }
 
@@ -152,13 +153,13 @@ body:has(.pyramid-page) { padding-bottom: 0; overflow: hidden; }
     font-size: 16px;
     text-transform: uppercase;
     letter-spacing: 3px;
-    color: var(--bs-secondary-color);
+    color: var(--text-muted);
 }
 
 .pyramid-page #pyr-current-reps {
     font-size: 180px;
     font-weight: bold;
-    color: #4ecca3;
+    color: var(--green);
     line-height: 1;
     margin: 10px 0;
 }
@@ -167,13 +168,13 @@ body:has(.pyramid-page) { padding-bottom: 0; overflow: hidden; }
     font-size: 24px;
     text-transform: uppercase;
     letter-spacing: 3px;
-    color: var(--bs-secondary-color);
+    color: var(--text-muted);
     margin-bottom: 30px;
 }
 
 .pyramid-page #pyr-status-text {
     font-size: 20px;
-    color: var(--bs-secondary-color);
+    color: var(--text-muted);
     margin-bottom: 20px;
 }
 
@@ -202,17 +203,17 @@ body:has(.pyramid-page) { padding-bottom: 0; overflow: hidden; }
 /* Timer display */
 .pyramid-page #pyr-timer-display {
     font-size: 72px;
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    color: var(--bs-body-color);
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
     margin-top: 10px;
 }
 
 .pyramid-page #pyr-timer-display.warning {
-    color: var(--bs-body-color);
+    color: var(--text);
 }
 
 .pyramid-page #pyr-timer-display.imminent {
-    color: #e94560;
+    color: var(--accent);
     animation: pyr-pulse 0.5s ease-in-out infinite alternate;
 }
 
@@ -224,7 +225,7 @@ body:has(.pyramid-page) { padding-bottom: 0; overflow: hidden; }
 /* Done screen */
 .pyramid-page #pyr-done-screen p {
     font-size: 18px;
-    color: var(--bs-secondary-color);
+    color: var(--text-muted);
     margin-bottom: 20px;
 }
 

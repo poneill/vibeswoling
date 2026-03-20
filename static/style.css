@@ -1,10 +1,64 @@
-/* --- App-specific styles (Bootstrap handles layout, buttons, tables, nav) --- */
+/* --- Design system: warm light palette inspired by gm_app --- */
 
-/* Lift cards hover accent */
-.lift-card { transition: border-color 0.15s; }
-.lift-card:hover { border-color: #e94560 !important; }
+:root {
+    --bg: #faf8f5;
+    --surface: #f0ede8;
+    --border: #d0d0d0;
+    --border-light: #e0dcd5;
+    --text: #111111;
+    --text-muted: #555555;
+    --accent: #c0392b;
+    --accent2: #1a6b7a;
+    --green: #1a7a42;
+    --orange: #c76b00;
+}
 
-/* Charts */
+/* Override Bootstrap theme */
+body {
+    font-family: 'Jost', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding-bottom: 80px;
+}
+
+/* Navbar */
+.navbar {
+    background: var(--surface);
+    border-color: var(--border) !important;
+}
+.navbar-brand { color: var(--text) !important; }
+.navbar .nav-link { color: var(--text-muted) !important; }
+.navbar .nav-link:hover { color: var(--text) !important; }
+
+/* Section headings */
+h1 { font-weight: 600; color: var(--text); }
+.section-label,
+.h6.text-secondary {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-muted) !important;
+}
+
+/* Override Bootstrap text utilities */
+.text-secondary { color: var(--text-muted) !important; }
+.text-success { color: var(--green) !important; }
+.text-light { color: var(--text) !important; }
+
+/* --- Lift Cards --- */
+.lift-card {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 6px;
+    transition: border-color 0.15s;
+    color: var(--text) !important;
+}
+.lift-card:hover { border-color: var(--accent) !important; }
+.lift-card .card-title { color: var(--text) !important; }
+.lift-card .card-text { color: var(--text-muted) !important; }
+
+/* --- Charts --- */
 .chart-section svg, #temporal-chart svg, #isocline-chart svg { width: 100%; height: auto; }
 
 /* --- Sort Bar --- */
@@ -12,24 +66,24 @@
 .sort-btn {
     flex: 1;
     padding: 6px 8px;
-    background: var(--bs-dark);
-    border: 1px solid var(--bs-border-color);
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 4px;
-    color: var(--bs-secondary-color);
+    color: var(--text-muted);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     cursor: pointer;
     transition: border-color 0.15s, color 0.15s;
 }
-.sort-btn:hover { border-color: var(--bs-secondary-color); }
-.sort-btn.sort-active { border-color: #e94560; color: #e94560; }
+.sort-btn:hover { border-color: var(--text-muted); }
+.sort-btn.sort-active { border-color: var(--accent); color: var(--accent); }
 
-/* --- Custom Modal Overlay (not Bootstrap modal) --- */
+/* --- Custom Modal Overlay --- */
 .modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.3);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -38,8 +92,8 @@
 }
 .modal-overlay.hidden { display: none; }
 .modal-panel {
-    background: var(--bs-body-bg);
-    border: 1px solid var(--bs-border-color);
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 24px;
     max-width: 500px;
@@ -52,34 +106,34 @@
 .suggestion-option {
     display: block;
     width: 100%;
-    background: var(--bs-dark);
-    border: 1px solid var(--bs-border-color);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 12px 16px;
-    color: var(--bs-body-color);
+    color: var(--text);
     text-align: left;
     cursor: pointer;
     margin-bottom: 8px;
     font-size: 0.95rem;
     transition: border-color 0.15s;
 }
-.suggestion-option:hover { border-color: #e94560; }
+.suggestion-option:hover { border-color: var(--accent); }
 .suggestion-option .so-main { font-weight: 600; }
-.suggestion-option .so-detail { font-size: 0.8rem; color: var(--bs-secondary-color); margin-top: 4px; }
-.suggestion-default { border-color: #e94560; }
+.suggestion-option .so-detail { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+.suggestion-default { border-color: var(--accent); }
 
 /* --- Workout Set Cards --- */
 .set-card {
-    background: var(--bs-body-bg);
-    border: 1px solid var(--bs-border-color);
-    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
     padding: 16px;
     margin-bottom: 8px;
     transition: border-color 0.2s, background 0.2s;
 }
-.set-card.active { border-color: #e94560; background: #1a2740; }
+.set-card.active { border-color: var(--accent); background: #fdf5f4; }
 .set-card.completed { opacity: 0.5; }
-.set-card.failed { opacity: 0.5; border-color: #f0a500; }
+.set-card.failed { opacity: 0.5; border-color: var(--orange); }
 
 .set-header {
     display: flex;
@@ -87,36 +141,36 @@
     align-items: center;
     margin-bottom: 4px;
 }
-.set-type { font-size: 0.75rem; text-transform: uppercase; color: var(--bs-secondary-color); font-weight: 600; }
+.set-type { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px; }
 .set-weight { font-size: 1.4rem; font-weight: 700; }
-.set-plates { font-size: 0.85rem; color: var(--bs-secondary-color); }
-.set-reps { font-size: 1.1rem; color: var(--bs-secondary-color); }
-.set-stats { font-size: 0.8rem; color: var(--bs-secondary-color); margin-top: 6px; }
+.set-plates { font-size: 0.85rem; color: var(--text-muted); }
+.set-reps { font-size: 1.1rem; color: var(--text-muted); }
+.set-stats { font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; }
 .set-actions { display: flex; gap: 8px; margin-top: 10px; }
 
 /* --- Timer --- */
 .timer-display {
     position: fixed;
     bottom: 0; left: 0; right: 0;
-    background: var(--bs-body-bg);
-    border-top: 2px solid #e94560;
+    background: var(--bg);
+    border-top: 2px solid var(--accent);
     padding: 16px;
     text-align: center;
     z-index: 1040;
 }
 .timer-display.hidden { display: none; }
-.timer-display.done { border-top-color: #4ecca3; }
-.timer-label { font-size: 0.85rem; color: var(--bs-secondary-color); margin-bottom: 4px; }
+.timer-display.done { border-top-color: var(--green); }
+.timer-label { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; }
 .timer-time { font-size: 2.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.timer-display.done .timer-time { color: #4ecca3; }
+.timer-display.done .timer-time { color: var(--green); }
 
-/* --- Reps input (pullups / failed set) --- */
+/* --- Reps input --- */
 .reps-input {
     width: 60px;
-    background: var(--bs-dark);
-    border: 1px solid var(--bs-border-color);
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 4px;
-    color: var(--bs-body-color);
+    color: var(--text);
     padding: 6px 8px;
     font-size: 1.2rem;
     text-align: center;
@@ -128,17 +182,16 @@
     position: absolute;
     pointer-events: none;
     background: rgba(0, 0, 0, 0.85);
-    border: 1px solid var(--bs-border-color);
     border-radius: 4px;
     padding: 4px 8px;
-    color: var(--bs-body-color);
+    color: #fff;
     font-size: 0.8rem;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     z-index: 10;
 }
 
-/* --- Activity Grid (GitHub-style contribution graph) --- */
+/* --- Activity Grid --- */
 .activity-grid-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -154,9 +207,10 @@
     width: 12px;
     height: 12px;
     border-radius: 2px;
-    background: #161b22;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
 }
-.activity-cell[data-level="1"] { background: #39d353; }
+.activity-cell[data-level="1"] { background: var(--green); border-color: var(--green); }
 .activity-month-labels {
     display: grid;
     grid-auto-flow: column;
@@ -164,14 +218,14 @@
     gap: 3px;
     margin-bottom: 4px;
     font-size: 0.65rem;
-    color: var(--bs-secondary-color);
+    color: var(--text-muted);
 }
 .activity-day-labels {
     display: grid;
     grid-template-rows: repeat(7, 12px);
     gap: 3px;
     font-size: 0.6rem;
-    color: var(--bs-secondary-color);
+    color: var(--text-muted);
     text-align: right;
     padding-right: 4px;
 }
@@ -179,18 +233,102 @@
 .activity-tooltip {
     position: fixed;
     pointer-events: none;
-    background: rgba(0, 0, 0, 0.9);
-    border: 1px solid var(--bs-border-color);
+    background: rgba(0, 0, 0, 0.85);
     border-radius: 4px;
     padding: 4px 8px;
-    color: var(--bs-body-color);
+    color: #fff;
     font-size: 0.75rem;
     white-space: nowrap;
     z-index: 1060;
 }
 
+/* --- Buttons (override Bootstrap) --- */
+.btn-danger {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: #fff !important;
+}
+.btn-danger:hover {
+    background: #a83227 !important;
+    border-color: #a83227 !important;
+}
+.btn-success {
+    background: var(--green) !important;
+    border-color: var(--green) !important;
+    color: #fff !important;
+}
+.btn-success:hover {
+    background: #145a30 !important;
+    border-color: #145a30 !important;
+}
+.btn-warning {
+    background: var(--orange) !important;
+    border-color: var(--orange) !important;
+    color: #fff !important;
+}
+.btn-outline-danger {
+    color: var(--accent) !important;
+    border-color: var(--accent) !important;
+    background: transparent !important;
+}
+.btn-outline-danger:hover {
+    background: var(--accent) !important;
+    color: #fff !important;
+}
+.btn-secondary {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+.btn-secondary:hover {
+    background: var(--border-light) !important;
+}
+.btn-outline-secondary {
+    color: var(--text-muted) !important;
+    border-color: var(--border) !important;
+    background: transparent !important;
+}
+.btn-outline-secondary:hover {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+}
+
+/* --- Forms (override Bootstrap) --- */
+.form-control, .form-select {
+    background: var(--bg) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--text-muted) !important;
+    box-shadow: none !important;
+}
+.form-label { color: var(--text-muted) !important; }
+
+/* --- Tables (override Bootstrap) --- */
+.table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text);
+    --bs-table-border-color: var(--border-light);
+    color: var(--text);
+}
+.table thead th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    border-bottom-color: var(--border);
+}
+.table-striped > tbody > tr:nth-of-type(odd) {
+    --bs-table-striped-bg: var(--surface);
+}
+
+/* --- Cards (override Bootstrap) --- */
+.card {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+
 /* Utility */
 .hidden { display: none !important; }
-
-/* Pad bottom for timer */
-body { padding-bottom: 80px; }

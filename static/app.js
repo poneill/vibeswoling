@@ -172,8 +172,8 @@ function renderWeekChecklist(status) {
             el.innerHTML = `<span class="text-success">&#10003;</span> ${label}`;
         } else if (inProgress) {
             el.className = "fw-semibold";
-            el.style.color = "#f0a500";
-            el.innerHTML = `<span style="color: #f0a500;">&#9656;</span> ${label} (${done}/${target})`;
+            el.style.color = "#c76b00";
+            el.innerHTML = `<span style="color: #c76b00;">&#9656;</span> ${label} (${done}/${target})`;
         } else {
             el.className = "text-secondary";
             el.innerHTML = `<span class="text-secondary">&middot;</span> ${label}`;
@@ -193,7 +193,7 @@ function renderTodaySuggestions(suggestions) {
     suggestions.forEach(s => {
         const card = document.createElement("a");
         card.href = `/history/${encodeURIComponent(s.lift_name)}`;
-        card.className = "card bg-dark border-secondary text-decoration-none mb-2 lift-card";
+        card.className = "card text-decoration-none mb-2 lift-card";
 
         let detailHtml = "";
         if (s.last_date) {
@@ -223,7 +223,7 @@ function renderTodaySuggestions(suggestions) {
                     <p class="card-text text-secondary small mb-0">${detailHtml}</p>
                     ${suggestHtml ? `<p class="card-text small mb-0 mt-1">${suggestHtml}</p>` : ""}
                 </div>
-                <span class="btn btn-outline-danger btn-sm">Start</span>
+                <span class="btn btn-outline-danger btn-sm" style="white-space: nowrap;">Start</span>
             </div>
         `;
         container.appendChild(card);
@@ -266,9 +266,14 @@ function populateHistoryTable(data, isPullups) {
         });
 
         if (isPullups) {
+            const weightCell = d.total_weight
+                ? `${d.total_weight} lbs` + (d.added_weight ? ` (+${d.added_weight})` : "")
+                : "-";
             row.innerHTML = `
                 <td>${dateStr}</td>
+                <td>${weightCell}</td>
                 <td>${d.reps ?? "-"}</td>
+                <td>${d.orm ? d.orm.toFixed(1) : "-"}</td>
                 <td>${d.notes || ""}</td>
             `;
         } else {
@@ -317,7 +322,7 @@ function renderSuggestionModal() {
 
     if (data.last) {
         const lastInfo = document.createElement("p");
-        lastInfo.style.color = "#999";
+        lastInfo.style.color = "#555";
         lastInfo.style.marginBottom = "12px";
         lastInfo.style.fontSize = "0.9rem";
         const lastDate = new Date(data.last.date).toLocaleDateString("en-US", {
@@ -465,8 +470,44 @@ function initPullupsWorkout(liftName, numSets) {
 
     // For pullups: dynamic set entry, no predetermined sets
     workoutState.sets = [];
+    workoutState.pullupBodyweight = null;
+    workoutState.pullupAddedWeight = 0;
     const container = document.getElementById("workout-sets");
     container.innerHTML = "";
+
+    // Bodyweight + added weight setup
+    const setupDiv = document.createElement("div");
+    setupDiv.className = "set-card";
+    setupDiv.style.marginBottom = "16px";
+    setupDiv.innerHTML = `
+        <div class="set-header"><span class="set-type">Weight Setup</span></div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap;">
+            <label style="color: #555; font-size: 0.85rem;">Body weight
+                <input type="number" class="reps-input" id="pullup-bodyweight"
+                       value="195" min="50" max="500" inputmode="numeric" style="width: 80px;">
+            </label>
+            <label style="color: #555; font-size: 0.85rem;">Added weight
+                <input type="number" class="reps-input" id="pullup-added-weight"
+                       value="0" min="0" max="200" inputmode="numeric" style="width: 80px;">
+            </label>
+            <span id="pullup-total-weight" class="text-secondary" style="font-size: 0.85rem;">Total: 195 lbs</span>
+        </div>
+    `;
+    container.appendChild(setupDiv);
+
+    const bwInput = document.getElementById("pullup-bodyweight");
+    const awInput = document.getElementById("pullup-added-weight");
+    const totalEl = document.getElementById("pullup-total-weight");
+    function updateTotal() {
+        const bw = parseFloat(bwInput.value) || 0;
+        const aw = parseFloat(awInput.value) || 0;
+        totalEl.textContent = `Total: ${bw + aw} lbs`;
+        workoutState.pullupBodyweight = bw;
+        workoutState.pullupAddedWeight = aw;
+    }
+    bwInput.addEventListener("input", updateTotal);
+    awInput.addEventListener("input", updateTotal);
+    updateTotal();
 
     function addPullupSet() {
         const idx = workoutState.sets.length;
@@ -511,21 +552,26 @@ window.logPullupSet = function(idx) {
     const reps = parseInt(input.value);
     if (isNaN(reps) || reps <= 0) return;
 
+    const bw = workoutState.pullupBodyweight;
+    const aw = workoutState.pullupAddedWeight;
+
     workoutState.sets[idx].reps = reps;
     workoutState.sets[idx].status = "completed";
     workoutState.completedSets.push({
         lift_name: workoutState.liftName,
         reps: reps,
-        weight: null,
+        weight: aw || null,
+        bodyweight: bw,
         notes: "",
     });
 
+    const weightInfo = aw > 0 ? ` · +${aw} lbs` : "";
     const card = document.getElementById(`set-${idx}`);
     card.className = "set-card completed";
     card.innerHTML = `
         <div class="set-header">
             <span class="set-type">Set ${idx + 1}</span>
-            <span class="set-reps">${reps} reps</span>
+            <span class="set-reps">${reps} reps${weightInfo}</span>
         </div>
     `;
 };
@@ -632,7 +678,7 @@ function promptActualReps(idx) {
             Planned: ${s.weight} lbs × ${s.reps}
         </p>
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-            <span style="color: #ccc;">Reps completed:</span>
+            <span style="color: #333;">Reps completed:</span>
             <input type="number" class="reps-input" id="actual-reps-input"
                    placeholder="${s.reps}" min="0" max="99" inputmode="numeric">
             <button class="btn btn-success btn-small" id="actual-reps-confirm">Log</button>
@@ -718,13 +764,13 @@ function showAlternativesModal(alternatives, completedIdx, plannedSet, actualRep
 
     const diff = actualReps - plannedSet.reps;
     const diffLabel = diff > 0 ? `+${diff} reps — nice!` : `${diff} reps`;
-    const diffColor = diff > 0 ? "var(--bs-success, #198754)" : "var(--warning, #ffc107)";
+    const diffColor = diff > 0 ? "#1a7a42" : "#c76b00";
 
     const context = document.createElement("div");
     context.style.cssText = "margin-bottom: 16px; font-size: 0.9rem;";
     context.innerHTML = `
-        <p style="color: #666; margin: 0 0 4px;">Planned: ${plannedSet.weight} lbs × ${plannedSet.reps} · 1RM: ${plannedSet.orm.toFixed(1)}</p>
-        <p style="color: #ccc; margin: 0 0 4px;">Actual: ${plannedSet.weight} lbs × ${actualReps} · 1RM: ${actualOrm.toFixed(1)}</p>
+        <p style="color: #555; margin: 0 0 4px;">Planned: ${plannedSet.weight} lbs × ${plannedSet.reps} · 1RM: ${plannedSet.orm.toFixed(1)}</p>
+        <p style="color: #333; margin: 0 0 4px;">Actual: ${plannedSet.weight} lbs × ${actualReps} · 1RM: ${actualOrm.toFixed(1)}</p>
         <p style="color: ${diffColor}; margin: 0; font-weight: 600;">${diffLabel}</p>
     `;
     body.appendChild(context);
@@ -893,7 +939,7 @@ function renderCalcResult(data) {
             </div>
             <div>
                 <span class="text-secondary small">Target 1RM</span>
-                <div class="fs-4 fw-bold" style="color: #4ecca3;">${data.target_orm.toFixed(1)} lbs</div>
+                <div class="fs-4 fw-bold" style="color: #1a7a42;">${data.target_orm.toFixed(1)} lbs</div>
                 <span class="text-secondary small">${data.default.weight} lbs × ${data.default.reps} (${data.default.plates})</span>
             </div>
         </div>

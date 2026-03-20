@@ -25,7 +25,7 @@
 <div class="row row-cols-1 row-cols-sm-2 g-3">
     {% for lift in lifts %}
     <div class="col">
-        <a href="/history/{{ lift.name }}" class="card bg-dark border-secondary text-decoration-none h-100 lift-card">
+        <a href="/history/{{ lift.name }}" class="card text-decoration-none h-100 lift-card">
             <div class="card-body">
                 <h5 class="card-title text-capitalize text-light mb-1">{{ lift.name }}</h5>
                 {% if lift.last_date %}

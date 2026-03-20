@@ -15,10 +15,12 @@ function initPyramidWorkout() {
   const maxRepsInput = document.getElementById('pyr-max-reps');
   const restPeriodInput = document.getElementById('pyr-rest-period');
   const bodyweightInput = document.getElementById('pyr-bodyweight');
+  const addedWeightInput = document.getElementById('pyr-added-weight');
 
   let maxReps = 5;
   let restPeriod = 90;
   let bodyweight = 195;
+  let addedWeight = 0;
   let pyramid = [];
   let expectedCumulative = [];
   let currentIndex = 0;
@@ -99,7 +101,7 @@ function initPyramidWorkout() {
     ctx.clearRect(0, 0, w, h);
 
     // Axes
-    const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-border-color').trim() || '#393823';
+    const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#d0d0d0';
     ctx.strokeStyle = borderColor;
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -109,7 +111,7 @@ function initPyramidWorkout() {
     ctx.stroke();
 
     // Y-axis labels
-    const secondaryColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-secondary-color').trim() || '#7a7260';
+    const secondaryColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#555555';
     ctx.fillStyle = secondaryColor;
     ctx.font = '10px SF Mono, Fira Code, monospace';
     ctx.textAlign = 'right';
@@ -158,7 +160,7 @@ function initPyramidWorkout() {
 
     // Actual cumulative -- solid line
     if (historyRows.length > 0) {
-      const bodyColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-body-color').trim() || '#b3a693';
+      const bodyColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#111111';
       ctx.strokeStyle = bodyColor;
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -234,7 +236,8 @@ function initPyramidWorkout() {
 
   function logSet() {
     const reps = pyramid[currentIndex];
-    const volume = reps * bodyweight;
+    const totalWeight = bodyweight + addedWeight;
+    const volume = reps * totalWeight;
     const prevCumulative = historyRows.length > 0 ? historyRows[historyRows.length - 1].cumulative : 0;
     const prevTotalReps = historyRows.length > 0 ? historyRows[historyRows.length - 1].totalReps : 0;
     const cumulative = prevCumulative + volume;
@@ -265,11 +268,12 @@ function initPyramidWorkout() {
   function updateSetupSummary() {
     const mr = parseInt(maxRepsInput.value, 10) || 0;
     const bw = parseFloat(bodyweightInput.value) || 0;
+    const aw = parseFloat(addedWeightInput.value) || 0;
     const rp = parseInt(restPeriodInput.value, 10) || 0;
 
     const sets = buildPyramid(mr);
     const totalReps = sets.reduce((a, b) => a + b, 0);
-    const totalVolume = totalReps * bw;
+    const totalVolume = totalReps * (bw + aw);
     const totalRestSecs = (sets.length - 1) * rp;
     const mins = Math.floor(totalRestSecs / 60);
     const secs = totalRestSecs % 60;
@@ -283,7 +287,8 @@ function initPyramidWorkout() {
       sets: logEntries.map(reps => ({
         lift_name: 'pullups',
         reps: reps,
-        weight: null,
+        weight: addedWeight || null,
+        bodyweight: bodyweight,
         notes: ''
       }))
     };
@@ -309,6 +314,7 @@ function initPyramidWorkout() {
   maxRepsInput.addEventListener('input', updateSetupSummary);
   restPeriodInput.addEventListener('input', updateSetupSummary);
   bodyweightInput.addEventListener('input', updateSetupSummary);
+  addedWeightInput.addEventListener('input', updateSetupSummary);
   updateSetupSummary();
 
   // Start button
@@ -316,13 +322,15 @@ function initPyramidWorkout() {
     ensureAudioContext();
     maxReps = parseInt(maxRepsInput.value, 10) || 5;
     bodyweight = parseFloat(bodyweightInput.value) || 195;
+    addedWeight = parseFloat(addedWeightInput.value) || 0;
     restPeriod = parseInt(restPeriodInput.value, 10) || 90;
 
+    const totalWeight = bodyweight + addedWeight;
     pyramid = buildPyramid(maxReps);
     expectedCumulative = [];
     let cum = 0;
     for (const reps of pyramid) {
-      cum += reps * bodyweight;
+      cum += reps * totalWeight;
       expectedCumulative.push(cum);
     }
     currentIndex = 0;

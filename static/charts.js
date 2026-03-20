@@ -69,23 +69,23 @@ function renderTemporalChart(data, selector) {
     svg.append("g")
         .attr("transform", `translate(0,${height - margin.bottom})`)
         .call(d3.axisBottom(x).ticks(6).tickFormat(d3.timeFormat("%b '%y")))
-        .attr("color", "#666");
+        .attr("color", "#999");
 
     svg.append("g")
         .attr("transform", `translate(${margin.left},0)`)
         .call(d3.axisLeft(yOrm).ticks(5))
-        .attr("color", "#4a9eff");
+        .attr("color", "#1a6b7a");
 
     svg.append("g")
         .attr("transform", `translate(${width - margin.right},0)`)
         .call(d3.axisRight(yVol).ticks(5))
-        .attr("color", "#f0a500");
+        .attr("color", "#c76b00");
 
     // Axis labels
     svg.append("text").attr("x", margin.left).attr("y", margin.top - 6)
-        .attr("fill", "#4a9eff").attr("font-size", "11px").text("1RM (lbs)");
+        .attr("fill", "#1a6b7a").attr("font-size", "11px").text("1RM (lbs)");
     svg.append("text").attr("x", width - margin.right).attr("y", margin.top - 6)
-        .attr("fill", "#f0a500").attr("font-size", "11px").attr("text-anchor", "end").text("Volume");
+        .attr("fill", "#c76b00").attr("font-size", "11px").attr("text-anchor", "end").text("Volume");
 
     // ORM line
     const ormLine = d3.line()
@@ -95,7 +95,7 @@ function renderTemporalChart(data, selector) {
     svg.append("path")
         .datum(sessionData)
         .attr("fill", "none")
-        .attr("stroke", "#4a9eff")
+        .attr("stroke", "#1a6b7a")
         .attr("stroke-width", 2)
         .attr("d", ormLine);
 
@@ -104,7 +104,7 @@ function renderTemporalChart(data, selector) {
         .attr("cx", d => x(d.date))
         .attr("cy", d => yOrm(d.maxOrm))
         .attr("r", 4)
-        .attr("fill", "#4a9eff");
+        .attr("fill", "#1a6b7a");
 
     // Volume bars
     const barWidth = Math.max(4, (width - margin.left - margin.right) / sessionData.length * 0.4);
@@ -114,7 +114,7 @@ function renderTemporalChart(data, selector) {
         .attr("y", d => yVol(d.volume))
         .attr("width", barWidth)
         .attr("height", d => height - margin.bottom - yVol(d.volume))
-        .attr("fill", "#f0a500")
+        .attr("fill", "#c76b00")
         .attr("opacity", 0.4);
 }
 
@@ -154,12 +154,12 @@ function renderIsoclineChart(data, selector) {
     svg.append("g")
         .attr("transform", `translate(0,${height - margin.bottom})`)
         .call(d3.axisBottom(x).ticks(10).tickFormat(d => d))
-        .attr("color", "#666");
+        .attr("color", "#999");
 
     svg.append("g")
         .attr("transform", `translate(${margin.left},0)`)
         .call(d3.axisLeft(y).ticks(8))
-        .attr("color", "#666");
+        .attr("color", "#999");
 
     svg.append("text").attr("x", width / 2).attr("y", height - 2)
         .attr("fill", "#999").attr("font-size", "11px").attr("text-anchor", "middle").text("Reps");
@@ -188,7 +188,7 @@ function renderIsoclineChart(data, selector) {
         svg.append("path")
             .datum(curveData)
             .attr("fill", "none")
-            .attr("stroke", "#444")
+            .attr("stroke", "#ccc")
             .attr("stroke-width", 1)
             .attr("stroke-dasharray", "4,4")
             .attr("d", line);
@@ -198,7 +198,7 @@ function renderIsoclineChart(data, selector) {
         svg.append("text")
             .attr("x", x(last.reps) + 4)
             .attr("y", y(last.weight) + 3)
-            .attr("fill", "#555")
+            .attr("fill", "#999")
             .attr("font-size", "9px")
             .text(orm);
     }
@@ -207,7 +207,7 @@ function renderIsoclineChart(data, selector) {
     const dateExtent = d3.extent(points, d => d.date);
     const colorScale = d3.scaleTime()
         .domain(dateExtent)
-        .range(["#555", "#4ecca3"]);
+        .range(["#ccc", "#1a7a42"]);
 
     // Data points
     svg.selectAll(".iso-point")
@@ -216,7 +216,7 @@ function renderIsoclineChart(data, selector) {
         .attr("cy", d => y(d.weight))
         .attr("r", 4)
         .attr("fill", d => colorScale(d.date))
-        .attr("stroke", "#1a1a2e")
+        .attr("stroke", "#faf8f5")
         .attr("stroke-width", 1);
 
     // Date labels on the 3 most recent sessions
@@ -237,7 +237,7 @@ function renderIsoclineChart(data, selector) {
         .data(Array.from(labelMap.values())).join("text")
         .attr("x", d => x(d.reps) + 7)
         .attr("y", d => y(d.weight) + 3)
-        .attr("fill", "#4ecca3")
+        .attr("fill", "#1a7a42")
         .attr("font-size", "9px")
         .attr("text-anchor", "start")
         .text(d => d.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }));
@@ -272,11 +272,11 @@ function renderCalculatorChart(data, selector) {
     svg.append("g")
         .attr("transform", `translate(0,${height - margin.bottom})`)
         .call(d3.axisBottom(x).ticks(10).tickFormat(d => d))
-        .attr("color", "#666");
+        .attr("color", "#999");
     svg.append("g")
         .attr("transform", `translate(${margin.left},0)`)
         .call(d3.axisLeft(y).ticks(8))
-        .attr("color", "#666");
+        .attr("color", "#999");
     svg.append("text").attr("x", width / 2).attr("y", height - 2)
         .attr("fill", "#999").attr("font-size", "11px").attr("text-anchor", "middle").text("Reps");
     svg.append("text").attr("x", margin.left).attr("y", margin.top - 6)
@@ -301,7 +301,7 @@ function renderCalculatorChart(data, selector) {
         svg.append("path")
             .datum(curveData)
             .attr("fill", "none")
-            .attr("stroke", "#444")
+            .attr("stroke", "#ccc")
             .attr("stroke-width", 1)
             .attr("stroke-dasharray", "4,4")
             .attr("d", curveLine);
@@ -310,7 +310,7 @@ function renderCalculatorChart(data, selector) {
         svg.append("text")
             .attr("x", x(last.reps) + 4)
             .attr("y", y(last.weight) + 3)
-            .attr("fill", "#555")
+            .attr("fill", "#999")
             .attr("font-size", "9px")
             .text(orm);
     }
@@ -331,7 +331,7 @@ function renderCalculatorChart(data, selector) {
         const area = d3.line().x(d => x(d.reps)).y(d => y(d.weight));
         svg.append("path")
             .datum(bandPath)
-            .attr("fill", "#4ecca3")
+            .attr("fill", "#1a7a42")
             .attr("opacity", 0.12)
             .attr("d", area);
     }
@@ -342,7 +342,7 @@ function renderCalculatorChart(data, selector) {
             .attr("cx", x(alt.reps))
             .attr("cy", y(alt.weight))
             .attr("r", 3.5)
-            .attr("fill", "#4ecca3")
+            .attr("fill", "#1a7a42")
             .attr("opacity", 0.6);
     });
 
@@ -351,8 +351,8 @@ function renderCalculatorChart(data, selector) {
         .attr("cx", x(data.default.reps))
         .attr("cy", y(data.default.weight))
         .attr("r", 5)
-        .attr("fill", "#4ecca3")
-        .attr("stroke", "#1a1a2e")
+        .attr("fill", "#1a7a42")
+        .attr("stroke", "#faf8f5")
         .attr("stroke-width", 1.5);
 
     // Input point
@@ -360,14 +360,14 @@ function renderCalculatorChart(data, selector) {
         .attr("cx", x(inputR))
         .attr("cy", y(inputW))
         .attr("r", 6)
-        .attr("fill", "#e94560")
-        .attr("stroke", "#1a1a2e")
+        .attr("fill", "#c0392b")
+        .attr("stroke", "#faf8f5")
         .attr("stroke-width", 1.5);
 
     // Hover interaction
     const tooltip = document.getElementById("calc-tooltip");
-    const crosshairV = svg.append("line").attr("stroke", "#666").attr("stroke-width", 0.5).attr("stroke-dasharray", "2,2").style("display", "none");
-    const crosshairH = svg.append("line").attr("stroke", "#666").attr("stroke-width", 0.5).attr("stroke-dasharray", "2,2").style("display", "none");
+    const crosshairV = svg.append("line").attr("stroke", "#999").attr("stroke-width", 0.5).attr("stroke-dasharray", "2,2").style("display", "none");
+    const crosshairH = svg.append("line").attr("stroke", "#999").attr("stroke-width", 0.5).attr("stroke-dasharray", "2,2").style("display", "none");
 
     svg.append("rect")
         .attr("x", margin.left)
