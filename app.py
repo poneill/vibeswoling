@@ -115,19 +115,23 @@ def api_history(lift_name: str):
     bar_weight = BAR_WEIGHTS.get(lift_name, 45)
     result = []
     for r in recs:
-        orm = effective_1rm(r.weight, r.reps) if r.weight and r.reps else None
-        vol = volume(r.weight, r.reps) if r.weight and r.reps else None
-        result.append(
-            {
-                "date": r.date.isoformat(),
-                "weight": r.weight,
-                "reps": r.reps,
-                "notes": r.notes,
-                "orm": orm,
-                "volume": vol,
-                "plates": plates_for_weight(r.weight, bar_weight) if r.weight else None,
-            }
-        )
+        tw = r.total_weight
+        orm = effective_1rm(tw, r.reps) if tw and r.reps else None
+        vol = volume(tw, r.reps) if tw and r.reps else None
+        entry = {
+            "date": r.date.isoformat(),
+            "weight": r.weight,
+            "reps": r.reps,
+            "notes": r.notes,
+            "orm": orm,
+            "volume": vol,
+            "plates": plates_for_weight(r.weight, bar_weight) if r.weight else None,
+        }
+        if r.bodyweight is not None:
+            entry["bodyweight"] = r.bodyweight
+            entry["added_weight"] = r.weight or 0
+            entry["total_weight"] = tw
+        result.append(entry)
     return jsonify(result)
 
 
@@ -270,6 +274,7 @@ def api_log():
                 weight=entry.get("weight"),
                 reps=entry.get("reps"),
                 notes=entry.get("notes", ""),
+                bodyweight=entry.get("bodyweight"),
             )
         )
 

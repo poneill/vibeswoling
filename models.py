@@ -5,19 +5,29 @@ from datetime import datetime
 @dataclass
 class LiftRecord:
     """One row from the CSV, after normalization."""
+
     date: datetime
-    lift_name: str          # Canonical name
-    weight: float | None    # None for pullups or missing data
-    reps: int | None        # None when missing
+    lift_name: str  # Canonical name
+    weight: float | None  # None for bodyweight-only pullups or missing data
+    reps: int | None  # None when missing
     notes: str = ""
+    bodyweight: float | None = None  # For pullups: body weight that session
+
+    @property
+    def total_weight(self) -> float | None:
+        """Total weight lifted (bodyweight + added weight for pullups)."""
+        if self.bodyweight is not None:
+            return self.bodyweight + (self.weight or 0)
+        return self.weight
 
 
 @dataclass
 class SetPlan:
     """A single planned set in a workout."""
+
     weight: float
     reps: int
-    set_type: str           # "warmup" or "work"
+    set_type: str  # "warmup" or "work"
     rest_seconds: int | None  # None = ad libitum
 
 
@@ -97,11 +107,11 @@ AVAILABLE_PLATES = [45, 25, 15, 10, 5, 2.5]
 # ---------- Weekly planning categories ----------
 
 LIFT_CATEGORIES: dict[str, list[str]] = {
-    "squat":    ["barbell squat", "front squat", "safety bar squat"],
+    "squat": ["barbell squat", "front squat", "safety bar squat"],
     "deadlift": ["deadlift", "hex bar deadlift"],
-    "bench":    ["bench"],
-    "ohp":      ["overhead press"],
-    "pullups":  ["pullups"],
+    "bench": ["bench"],
+    "ohp": ["overhead press"],
+    "pullups": ["pullups"],
 }
 
 WEEKLY_TARGETS: dict[str, int] = {
@@ -146,7 +156,9 @@ def plates_for_weight(total_weight: float, bar_weight: float) -> str:
             if count == 1:
                 plates.append(str(plate) if plate != int(plate) else str(int(plate)))
             else:
-                plates.append(f"{count}\u00d7{int(plate) if plate == int(plate) else plate}")
+                plates.append(
+                    f"{count}\u00d7{int(plate) if plate == int(plate) else plate}"
+                )
 
     if not plates:
         return "bar"

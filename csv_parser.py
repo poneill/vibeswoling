@@ -121,6 +121,7 @@ def parse_csv(filepath: str) -> list[LiftRecord]:
         # --- Weight, Reps, Notes ---
         weight: float | None = None
         reps: int | None = None
+        bodyweight: float | None = None
         notes_parts: list[str] = []
 
         if annotation_note:
@@ -132,29 +133,55 @@ def parse_csv(filepath: str) -> list[LiftRecord]:
             # Just date and lift, nothing else
             pass
         elif is_bw:
-            # For bodyweight lifts, numbers are reps (no weight)
-            reps_found = False
-            for t in remaining:
-                t = t.strip()
-                if not t or t.upper() == "NA":
-                    continue
-                if not reps_found:
-                    # Handle "195. 5" typo pattern for pullups
-                    m = re.match(r"^\d+\.\s+(\d+)$", t)
-                    if m:
-                        reps = int(m.group(1))
-                        reps_found = True
+            # Check for bw:NNN token indicating weighted pullup format
+            bw_value = None
+            bw_token_idx = None
+            for i, t in enumerate(remaining):
+                bw_match = re.match(r"^bw:(\d+\.?\d*)$", t.strip())
+                if bw_match:
+                    bw_value = float(bw_match.group(1))
+                    bw_token_idx = i
+                    break
+
+            if bw_value is not None:
+                # New weighted format: added_weight, reps, bw:NNN[, notes]
+                bodyweight = bw_value
+                non_bw = [t for i, t in enumerate(remaining) if i != bw_token_idx]
+                # First token = added weight, second = reps, rest = notes
+                if non_bw:
+                    w = _try_parse_float(non_bw[0])
+                    if w is not None:
+                        weight = w
+                if len(non_bw) > 1:
+                    reps = _try_parse_int(non_bw[1])
+                for t in non_bw[2:]:
+                    t = t.strip()
+                    if t:
+                        notes_parts.append(t)
+            else:
+                # Legacy bodyweight format: numbers are reps (no weight)
+                reps_found = False
+                for t in remaining:
+                    t = t.strip()
+                    if not t or t.upper() == "NA":
                         continue
-                    val, note = _extract_paren_note(t)
-                    if note:
-                        notes_parts.append(note)
-                    parsed_reps = _try_parse_int(val)
-                    if parsed_reps is not None:
-                        reps = parsed_reps
-                        reps_found = True
-                        continue
-                # Everything else is notes
-                notes_parts.append(t)
+                    if not reps_found:
+                        # Handle "195. 5" typo pattern for pullups
+                        m = re.match(r"^\d+\.\s+(\d+)$", t)
+                        if m:
+                            reps = int(m.group(1))
+                            reps_found = True
+                            continue
+                        val, note = _extract_paren_note(t)
+                        if note:
+                            notes_parts.append(note)
+                        parsed_reps = _try_parse_int(val)
+                        if parsed_reps is not None:
+                            reps = parsed_reps
+                            reps_found = True
+                            continue
+                    # Everything else is notes
+                    notes_parts.append(t)
         else:
             # Standard lift: weight [, reps [, notes]]
             # Token index 0 -> weight
@@ -205,13 +232,16 @@ def parse_csv(filepath: str) -> list[LiftRecord]:
         # Clean up note formatting
         notes = re.sub(r"\s+", " ", notes)
 
-        records.append(LiftRecord(
-            date=date,
-            lift_name=lift_name,
-            weight=weight,
-            reps=reps,
-            notes=notes,
-        ))
+        records.append(
+            LiftRecord(
+                date=date,
+                lift_name=lift_name,
+                weight=weight,
+                reps=reps,
+                notes=notes,
+                bodyweight=bodyweight,
+            )
+        )
 
     records.sort(key=lambda r: r.date)
     return records
@@ -226,13 +256,29 @@ def append_to_csv(filepath: str, records: list[LiftRecord]) -> None:
             # %e gives space-padded day, matching existing format like "Feb  6"
             csv_name = CANONICAL_TO_CSV.get(rec.lift_name, rec.lift_name)
             parts = [date_str, csv_name]
-            if rec.weight is not None:
-                w = int(rec.weight) if rec.weight == int(rec.weight) else rec.weight
+            if rec.bodyweight is not None:
+                # Weighted pullup format: added_weight, reps, bw:NNN
+                added = rec.weight or 0
+                w = int(added) if added == int(added) else added
                 parts.append(str(w))
-            if rec.reps is not None:
-                parts.append(str(rec.reps))
-            if rec.notes:
-                parts.append(rec.notes)
+                if rec.reps is not None:
+                    parts.append(str(rec.reps))
+                bw = (
+                    int(rec.bodyweight)
+                    if rec.bodyweight == int(rec.bodyweight)
+                    else rec.bodyweight
+                )
+                parts.append(f"bw:{bw}")
+                if rec.notes:
+                    parts.append(rec.notes)
+            else:
+                if rec.weight is not None:
+                    w = int(rec.weight) if rec.weight == int(rec.weight) else rec.weight
+                    parts.append(str(w))
+                if rec.reps is not None:
+                    parts.append(str(rec.reps))
+                if rec.notes:
+                    parts.append(rec.notes)
             f.write(", ".join(parts) + "\n")
 
 
@@ -242,6 +288,7 @@ if __name__ == "__main__":
 
     # Summary by lift
     from collections import Counter
+
     counts = Counter(r.lift_name for r in recs)
     print("Records per lift:")
     for lift, count in counts.most_common():
@@ -249,10 +296,15 @@ if __name__ == "__main__":
 
     # Show any records with missing weight/reps for main lifts
     from models import MAIN_LIFTS
+
     print("\nMain lift records missing weight or reps:")
     for r in recs:
         if r.lift_name in MAIN_LIFTS:
             if r.weight is None and r.lift_name != "pullups":
-                print(f"  {r.date.date()} {r.lift_name}: weight=None reps={r.reps} notes={r.notes!r}")
+                print(
+                    f"  {r.date.date()} {r.lift_name}: weight=None reps={r.reps} notes={r.notes!r}"
+                )
             if r.reps is None:
-                print(f"  {r.date.date()} {r.lift_name}: weight={r.weight} reps=None notes={r.notes!r}")
+                print(
+                    f"  {r.date.date()} {r.lift_name}: weight={r.weight} reps=None notes={r.notes!r}"
+                )

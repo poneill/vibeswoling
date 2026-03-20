@@ -95,18 +95,14 @@ class TestParseCsv:
             os.unlink(path)
 
     def test_standard_barbell_row(self):
-        recs = self._parse_lines(
-            "Mon Feb 10 18:30:00 EST 2025, bench, 150, 5"
-        )
+        recs = self._parse_lines("Mon Feb 10 18:30:00 EST 2025, bench, 150, 5")
         assert len(recs) == 1
         assert recs[0].lift_name == "bench"
         assert recs[0].weight == 150
         assert recs[0].reps == 5
 
     def test_bodyweight_lift(self):
-        recs = self._parse_lines(
-            "Mon Feb 10 18:30:00 EST 2025, pullups, 8"
-        )
+        recs = self._parse_lines("Mon Feb 10 18:30:00 EST 2025, pullups, 8")
         assert len(recs) == 1
         assert recs[0].weight is None
         assert recs[0].reps == 8
@@ -121,29 +117,21 @@ class TestParseCsv:
         assert recs[0].reps == 5
 
     def test_notes_preserved(self):
-        recs = self._parse_lines(
-            "Mon Feb 10 18:30:00 EST 2025, dl, 295, 5, very easy"
-        )
+        recs = self._parse_lines("Mon Feb 10 18:30:00 EST 2025, dl, 295, 5, very easy")
         assert recs[0].notes == "very easy"
 
     def test_bracket_annotation_becomes_note(self):
-        recs = self._parse_lines(
-            "Mon Feb 10 18:30:00 EST 2025, bench [!], 150, 5"
-        )
+        recs = self._parse_lines("Mon Feb 10 18:30:00 EST 2025, bench [!], 150, 5")
         assert recs[0].lift_name == "bench"
         assert "!" in recs[0].notes
 
     def test_parenthetical_note_in_reps(self):
-        recs = self._parse_lines(
-            "Mon Feb 10 18:30:00 EST 2025, dl, 295, 5 (good!)"
-        )
+        recs = self._parse_lines("Mon Feb 10 18:30:00 EST 2025, dl, 295, 5 (good!)")
         assert recs[0].reps == 5
         assert "good!" in recs[0].notes
 
     def test_bare_comma_weight_reps(self):
-        recs = self._parse_lines(
-            "Mon Feb 10 18:30:00 EST 2025, bench, 75,5"
-        )
+        recs = self._parse_lines("Mon Feb 10 18:30:00 EST 2025, bench, 75,5")
         assert recs[0].weight == 75
         assert recs[0].reps == 5
 
@@ -170,10 +158,71 @@ class TestParseCsv:
         assert recs[0].date < recs[1].date
 
     def test_alias_resolution_in_full_parse(self):
-        recs = self._parse_lines(
-            "Mon Feb 10 18:30:00 EST 2025, sbs, 175, 5"
-        )
+        recs = self._parse_lines("Mon Feb 10 18:30:00 EST 2025, sbs, 175, 5")
         assert recs[0].lift_name == "safety bar squat"
+
+
+class TestWeightedPullups:
+    """Tests for weighted pullup CSV format with bw:NNN notation."""
+
+    def _parse_lines(self, *lines):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
+            for line in lines:
+                f.write(line + "\n")
+            path = f.name
+        try:
+            return parse_csv(path)
+        finally:
+            os.unlink(path)
+
+    def test_weighted_pullup_parse(self):
+        recs = self._parse_lines("Mon Feb 10 18:30:00 EST 2025, pullups, 25, 5, bw:195")
+        assert len(recs) == 1
+        assert recs[0].lift_name == "pullups"
+        assert recs[0].weight == 25
+        assert recs[0].reps == 5
+        assert recs[0].bodyweight == 195
+        assert recs[0].total_weight == 220
+
+    def test_bodyweight_only_new_format(self):
+        """Zero added weight with bw: token."""
+        recs = self._parse_lines("Mon Feb 10 18:30:00 EST 2025, pullups, 0, 8, bw:195")
+        assert recs[0].weight == 0
+        assert recs[0].reps == 8
+        assert recs[0].bodyweight == 195
+        assert recs[0].total_weight == 195
+
+    def test_legacy_pullup_still_works(self):
+        """Old format without bw: token still parses as reps-only."""
+        recs = self._parse_lines("Mon Feb 10 18:30:00 EST 2025, pullups, 8")
+        assert recs[0].weight is None
+        assert recs[0].reps == 8
+        assert recs[0].bodyweight is None
+        assert recs[0].total_weight is None
+
+    def test_weighted_pullup_with_notes(self):
+        recs = self._parse_lines(
+            "Mon Feb 10 18:30:00 EST 2025, pullups, 25, 5, bw:195, felt strong"
+        )
+        assert recs[0].weight == 25
+        assert recs[0].reps == 5
+        assert recs[0].bodyweight == 195
+        assert recs[0].notes == "felt strong"
+
+    def test_total_weight_property(self):
+        """total_weight = bodyweight + added weight."""
+        rec = LiftRecord(datetime.now(), "pullups", 25, 5, bodyweight=195)
+        assert rec.total_weight == 220
+
+    def test_total_weight_no_bodyweight(self):
+        """total_weight falls back to weight when no bodyweight."""
+        rec = LiftRecord(datetime.now(), "bench", 155, 5)
+        assert rec.total_weight == 155
+
+    def test_total_weight_none(self):
+        """total_weight is None when both weight and bodyweight are None."""
+        rec = LiftRecord(datetime.now(), "pullups", None, 5)
+        assert rec.total_weight is None
 
 
 class TestAppendToCsv:
@@ -184,7 +233,9 @@ class TestAppendToCsv:
 
         try:
             records = [
-                LiftRecord(datetime(2026, 2, 23, 10, 0, 0), "bench", 155, 5, "felt good"),
+                LiftRecord(
+                    datetime(2026, 2, 23, 10, 0, 0), "bench", 155, 5, "felt good"
+                ),
                 LiftRecord(datetime(2026, 2, 23, 10, 0, 0), "pullups", None, 8, ""),
             ]
             append_to_csv(path, records)
@@ -196,5 +247,38 @@ class TestAppendToCsv:
             assert parsed[0].reps == 5
             assert parsed[1].lift_name == "pullups"
             assert parsed[1].reps == 8
+        finally:
+            os.unlink(path)
+
+    def test_weighted_pullup_round_trip(self):
+        """Weighted pullup records can be written and parsed back."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
+            path = f.name
+
+        try:
+            records = [
+                LiftRecord(
+                    datetime(2026, 2, 23, 10, 0, 0),
+                    "pullups",
+                    25,
+                    5,
+                    "",
+                    bodyweight=195,
+                ),
+                LiftRecord(
+                    datetime(2026, 2, 23, 10, 0, 0), "pullups", 0, 8, "", bodyweight=195
+                ),
+            ]
+            append_to_csv(path, records)
+            parsed = parse_csv(path)
+
+            assert len(parsed) == 2
+            assert parsed[0].weight == 25
+            assert parsed[0].reps == 5
+            assert parsed[0].bodyweight == 195
+            assert parsed[0].total_weight == 220
+            assert parsed[1].weight == 0
+            assert parsed[1].reps == 8
+            assert parsed[1].bodyweight == 195
         finally:
             os.unlink(path)
